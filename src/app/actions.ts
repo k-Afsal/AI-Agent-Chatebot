@@ -28,6 +28,12 @@ export async function sendMessageAction(input: SendMessageInput) {
     return { error: 'User not authenticated.' };
   }
   
+  if (!db) {
+    const errorMessage = 'Database connection is not available. Check server configuration.';
+    console.error('sendMessageAction Error:', errorMessage);
+    return { error: errorMessage };
+  }
+
   try {
     // 1. Add user message to Firestore optimistically from the server
     const userMessageRef = await db.collection('chats').add({
@@ -114,6 +120,10 @@ export async function getApiKeys(userId: string): Promise<Record<string, string>
   if (!userId) {
     return {};
   }
+  if (!db) {
+    console.error("Error fetching API keys: Database connection not available.");
+    return {};
+  }
   try {
     const userDocRef = db.collection('users').doc(userId);
     const docSnap = await userDocRef.get();
@@ -130,6 +140,11 @@ export async function getApiKeys(userId: string): Promise<Record<string, string>
 export async function saveApiKeys(userId: string, apiKeys: Record<string, string>): Promise<{success: boolean, error?: string}> {
     if (!userId) {
         return { success: false, error: 'User not authenticated.' };
+    }
+    if (!db) {
+        const errorMessage = 'Database connection is not available. Check server configuration.';
+        console.error('saveApiKeys Error:', errorMessage);
+        return { success: false, error: errorMessage };
     }
     try {
         const userDocRef = db.collection('users').doc(userId);
