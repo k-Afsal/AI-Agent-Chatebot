@@ -16,6 +16,7 @@ const ChatInputSchema = z.object({
   userId: z.string().describe('The ID of the user making the query.'),
   selectedTool: z.string().describe('The tool selected by the user. Can be "Auto".'),
   apiKey: z.string().optional().describe('The API key for the selected tool, if required.'),
+  ollamaHost: z.string().optional().describe('The host for the Ollama API.'),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
@@ -95,7 +96,8 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
+        endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+        headers['x-goog-api-key'] = input.apiKey || '';
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };
@@ -121,7 +123,8 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Ollama':
-        endpoint = 'http://localhost:11434/api/chat';
+        const ollamaBaseUrl = input.ollamaHost || 'http://localhost:11434';
+        endpoint = `${ollamaBaseUrl.replace(/\/$/, '')}/api/chat`;
         if (input.apiKey) {
           headers['Authorization'] = `Bearer ${input.apiKey}`;
         }
@@ -186,7 +189,7 @@ const chatFlow = ai.defineFlow(
         }
       } catch (error) {
         console.error(`Error calling ${finalTool} API:`, error);
-        if (error instanceof TypeError && error.message === 'fetch failed') {
+        if (error instanceof TypeError && error.message.includes('fetch failed')) {
             response = `Error communicating with ${finalTool}. Please ensure the local server is running and accessible at ${endpoint}.`;
         } else {
             response = `Error communicating with ${finalTool}. Please check your API key and network connection.`;

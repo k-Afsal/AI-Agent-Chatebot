@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { LoaderCircle, Key, ArrowLeft, Info } from 'lucide-react';
+import { LoaderCircle, Key, ArrowLeft, Info, Server } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -26,6 +26,8 @@ export default function SettingsPage() {
 
   const [initialApiKeys, setInitialApiKeys] = useState<Record<string, string>>({});
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [initialOllamaHost, setInitialOllamaHost] = useState('');
+  const [ollamaHost, setOllamaHost] = useState('');
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -44,6 +46,16 @@ export default function SettingsPage() {
     if (typeof window === 'undefined') return;
     localStorage.setItem(`apiKeys_${userId}`, JSON.stringify(keys));
   };
+  
+  const getOllamaHostFromStorage = (userId: string): string => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem(`ollamaHost_${userId}`) || '';
+  };
+  
+  const saveOllamaHostToStorage = (userId: string, host: string) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(`ollamaHost_${userId}`, host);
+  };
 
 
   useEffect(() => {
@@ -56,8 +68,11 @@ export default function SettingsPage() {
     if (user) {
       setLoading(true);
       const keys = getApiKeysFromStorage(user.uid);
+      const host = getOllamaHostFromStorage(user.uid);
       setApiKeys(keys);
       setInitialApiKeys(keys);
+      setOllamaHost(host);
+      setInitialOllamaHost(host);
       setLoading(false);
     }
   }, [user]);
@@ -71,10 +86,12 @@ export default function SettingsPage() {
     startTransition(() => {
       try {
         saveApiKeysToStorage(user.uid, apiKeys);
+        saveOllamaHostToStorage(user.uid, ollamaHost);
         setInitialApiKeys(apiKeys);
+        setInitialOllamaHost(ollamaHost);
         toast({
           title: "Success",
-          description: "Your API keys have been saved locally.",
+          description: "Your settings have been saved locally.",
         });
         
         if (fromChat) {
@@ -83,17 +100,17 @@ export default function SettingsPage() {
 
         window.dispatchEvent(new Event('storage'));
       } catch (error) {
-        console.error("Error saving API keys to localStorage:", error);
+        console.error("Error saving settings to localStorage:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Could not save your API keys to local storage.",
+          description: "Could not save your settings to local storage.",
         });
       }
     });
   };
   
-  const hasChanges = JSON.stringify(initialApiKeys) !== JSON.stringify(apiKeys);
+  const hasChanges = JSON.stringify(initialApiKeys) !== JSON.stringify(apiKeys) || initialOllamaHost !== ollamaHost;
   const hasAtLeastOneKey = Object.values(apiKeys).some(key => key.trim() !== '');
 
   if (authLoading || !user) {
@@ -139,7 +156,7 @@ export default function SettingsPage() {
             </Alert>
           )}
 
-          <Card>
+          <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <Key className="h-6 w-6" />
@@ -155,7 +172,7 @@ export default function SettingsPage() {
                   <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : (
-                <form onSubmit={(e) => {e.preventDefault(); handleSaveChanges();}} className="space-y-6">
+                <div className="space-y-6">
                   {aiTools.map(tool => (
                     <div key={tool} className="space-y-2">
                       <Label htmlFor={tool} className="font-semibold">{tool}</Label>
@@ -169,14 +186,42 @@ export default function SettingsPage() {
                       />
                     </div>
                   ))}
-                  <Button type="submit" disabled={isPending || !hasChanges} className="w-full sm:w-auto">
-                    {isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Save Changes
-                  </Button>
-                </form>
+                </div>
               )}
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader>
+               <div className="flex items-center gap-3">
+                <Server className="h-6 w-6" />
+                <div>
+                  <CardTitle>Ollama Configuration</CardTitle>
+                  <CardDescription>Specify the host for your local Ollama server if it's not running on localhost.</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+               <div className="space-y-2">
+                <Label htmlFor="ollama-host" className="font-semibold">Ollama Host</Label>
+                <Input
+                  id="ollama-host"
+                  type="text"
+                  placeholder="e.g. http://192.168.1.10:11434"
+                  value={ollamaHost}
+                  onChange={(e) => setOllamaHost(e.target.value)}
+                  className="font-mono"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="mt-6">
+             <Button onClick={handleSaveChanges} disabled={isPending || !hasChanges} className="w-full sm:w-auto">
+              {isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Changes
+            </Button>
+          </div>
         </div>
       </div>
     </main>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if(userId) {
         localStorage.removeItem(`apiKeys_${userId}`);
         localStorage.removeItem(`chatHistory_${userId}`);
+        localStorage.removeItem(`ollamaHost_${userId}`);
     }
     localStorage.removeItem(USER_STORAGE_KEY);
     setUser(null);

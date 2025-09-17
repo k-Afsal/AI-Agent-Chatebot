@@ -60,6 +60,11 @@ const getApiKeysFromStorage = (userId: string): Record<string, string> => {
   }
 };
 
+const getOllamaHostFromStorage = (userId: string): string => {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem(`ollamaHost_${userId}`) || '';
+};
+
 const getMessagesFromStorage = (userId: string): Message[] => {
     if (typeof window === 'undefined') return [];
     const storedMessages = localStorage.getItem(`chatHistory_${userId}`);
@@ -83,6 +88,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, startTransition] = useTransition();
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [ollamaHost, setOllamaHost] = useState('');
   const [keyPrompt, setKeyPrompt] = useState<{ open: boolean; tool: string | null; prompt: string | null }>({ open: false, tool: null, prompt: null });
   const [tempApiKey, setTempApiKey] = useState("");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -93,9 +99,12 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
   const fetchKeysAndRedirect = React.useCallback(() => {
     const keys = getApiKeysFromStorage(user.uid);
+    const host = getOllamaHostFromStorage(user.uid);
     setApiKeys(keys);
-    // Redirect to settings if NO keys are available at all
-    if (Object.keys(keys).length === 0) {
+    setOllamaHost(host);
+    // Redirect to settings if NO keys are available at all, excluding Ollama if it has no key
+    const hasApiKeys = Object.entries(keys).some(([tool, key]) => key.trim() !== '' && tool !== 'Ollama') || keys['Ollama'];
+    if (!hasApiKeys && !keys.Ollama) {
         router.push('/settings?from=chat');
     }
   }, [user.uid, router]);
@@ -111,7 +120,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     }
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === `apiKeys_${user.uid}`) {
+      if (e.key === `apiKeys_${user.uid}` || e.key === `ollamaHost_${user.uid}`) {
         fetchKeysAndRedirect();
       }
       if (e.key === `chatHistory_${user.uid}`) {
@@ -146,15 +155,19 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
     let apiKey = tempApiKey || apiKeys[tool];
 
-    // For 'Auto' tool, we need to decide which key to use. Let's default to Gemini.
+    // For 'Auto' tool, we need to decide which key to use. Let's default to Gemini if available.
     if (tool === 'Auto' && !apiKey) {
-      apiKey = apiKeys['Gemini']; // Fallback for auto if no direct key is found
+      apiKey = apiKeys['Gemini'];
     }
 
-    if (tool !== 'Auto' && !apiKey) {
+    if (tool !== 'Auto' && !apiKey && tool !== 'Ollama') {
       setKeyPrompt({ open: true, tool, prompt });
       return;
     }
+     if (tool === 'Ollama' && !apiKey && apiKeys['Ollama']) {
+      apiKey = apiKeys['Ollama'];
+    }
+
 
     const userMessage: Message = {
         id: `user-${Date.now()}`,
@@ -169,7 +182,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
     startTransition(async () => {
       try {
-        const result = await chat({ query: prompt, selectedTool: tool, userId: user.uid, apiKey });
+        const result = await chat({ query: prompt, selectedTool: tool, userId: user.uid, apiKey, ollamaHost });
         
         if (!result) {
             throw new Error("No response from the AI.");
