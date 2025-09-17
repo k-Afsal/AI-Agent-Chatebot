@@ -6,6 +6,7 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import Header from '@/components/header';
 import type { User } from 'firebase/auth';
+import { cookies } from 'next/headers';
 
 export const metadata: Metadata = {
   title: 'AI Agent Chat',
@@ -53,6 +54,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const layout = cookies().get('sidebar_state');
+  const defaultOpen = layout ? layout.value === 'true' : true;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -63,7 +67,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          <SidebarProvider>
+          <SidebarProvider defaultOpen={defaultOpen}>
             <div className="flex h-screen w-full flex-col bg-background">
               <Header user={plainUser} />
               {children}

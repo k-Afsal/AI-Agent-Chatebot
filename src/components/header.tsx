@@ -13,7 +13,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Bot, User as UserIcon, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import * as React from 'react';
 
 
 interface PlainUser {
@@ -24,6 +25,13 @@ interface PlainUser {
 }
 
 export default function Header({ user }: { user: PlainUser }) {
+  const [isClient, setIsClient] = React.useState(false);
+  const { isMobile } = useSidebar();
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const getInitials = (email: string | null) => {
     if (!email) return 'U';
@@ -33,7 +41,7 @@ export default function Header({ user }: { user: PlainUser }) {
   return (
     <header className="sticky top-0 z-10 flex h-16 w-full shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
       <div className="flex items-center gap-2">
-        <SidebarTrigger className="hidden md:flex" />
+         {isClient && <SidebarTrigger className={isMobile ? 'flex md:hidden' : 'hidden md:flex'} />}
         <Bot className="h-7 w-7 text-primary" />
         <h1 className="text-xl font-bold tracking-tight text-foreground">
           AIAgentChat
