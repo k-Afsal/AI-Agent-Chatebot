@@ -1,9 +1,9 @@
 
 "use client";
 
+import * as React from 'react';
 import type { User } from 'firebase/auth';
 import Header from '@/components/header';
-import ChatHistory from './chat-history';
 import ChatInput from './chat-input';
 import { useState, useEffect, useTransition } from 'react';
 import { sendMessageAction } from '@/app/actions';
@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Bot } from 'lucide-react';
 import Link from 'next/link';
+import ChatMessage from './chat-message';
 
 
 export interface Message {
@@ -44,10 +45,12 @@ const getApiKeysFromStorage = (): Record<string, string> => {
 
 
 export default function ChatLayout({ user }: { user: User }) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, startTransition] = useTransition();
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [keyPrompt, setKeyPrompt] = useState<{ open: boolean; tool: string | null; prompt: string | null }>({ open: false, tool: null, prompt: null });
   const [tempApiKey, setTempApiKey] = useState("");
+  const scrollAreaRef = React.useRef<HTMLDivElement>(null);
 
   const { toast } = useToast();
 
@@ -58,21 +61,23 @@ export default function ChatLayout({ user }: { user: User }) {
 
   useEffect(() => {
     fetchKeys();
-
-    // Listen for changes from the settings page
-    const handleStorageChange = () => {
-      fetchKeys();
-    };
+    const handleStorageChange = () => fetchKeys();
     window.addEventListener('storage', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
+   useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+
   const handleSendMessage = (prompt: string, tool: string) => {
     if (!prompt.trim() || isSending) return;
 
-    // Use a temp key if provided, otherwise check stored keys
     const apiKey = tempApiKey || apiKeys[tool];
 
     if (tool !== 'Auto' && !apiKey) {
@@ -80,16 +85,43 @@ export default function ChatLayout({ user }: { user: User }) {
       return;
     }
 
+    // Optimistically add user message to state
+    const userMessage: Message = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        text: prompt,
+        tool,
+        createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+
     startTransition(async () => {
       try {
         const result = await sendMessageAction({ prompt, tool, userId: user.uid, apiKey });
+        
         if (result?.error) {
           toast({
             variant: 'destructive',
             title: 'Error sending message',
             description: result.error,
           });
-        } else {
+           // Remove optimistic user message on error
+          setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+
+        } else if (result?.success && result.aiResponse) {
+            const aiMessage: Message = {
+                id: `ai-${Date.now()}`,
+                role: 'ai',
+                text: result.aiResponse.response,
+                tool: result.aiResponse.tool,
+                providerRaw: typeof result.aiResponse.rawResponse === 'string' 
+                    ? result.aiResponse.rawResponse 
+                    : JSON.stringify(result.aiResponse.rawResponse, null, 2),
+                createdAt: new Date(),
+            };
+            setMessages(prev => [...prev, aiMessage]);
+
             setTempApiKey(""); 
             setKeyPrompt({open: false, tool: null, prompt: null});
         }
@@ -99,6 +131,8 @@ export default function ChatLayout({ user }: { user: User }) {
           title: 'An unexpected error occurred',
           description: error instanceof Error ? error.message : String(error),
         });
+        // Remove optimistic user message on error
+        setMessages(prev => prev.filter(m => m.id !== userMessage.id));
       }
     });
   };
@@ -109,11 +143,31 @@ export default function ChatLayout({ user }: { user: User }) {
     }
   }
 
+  const ChatList = () => {
+    if (messages.length > 0) {
+      return (
+        <div className="mx-auto w-full max-w-3xl space-y-6 p-4 md:p-6">
+          {messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
+        </div>
+      )
+    }
+    return (
+       <div className="flex h-full flex-col items-center justify-center gap-2">
+          <div className="rounded-full bg-primary/10 p-4">
+             <Bot className="h-10 w-10 text-primary" />
+          </div>
+          <h2 className="text-xl font-semibold">Welcome!</h2>
+          <p className="text-muted-foreground">Start the conversation by sending a message below.</p>
+        </div>
+    );
+  }
+
+
   return (
     <div className="flex h-screen flex-col bg-background">
       <Header user={user} />
-      <div className="flex-1 overflow-hidden">
-        <ChatHistory userId={user.uid} />
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+        <ChatList />
       </div>
       <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
         <div className="mx-auto max-w-3xl">

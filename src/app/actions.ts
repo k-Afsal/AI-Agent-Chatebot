@@ -1,8 +1,6 @@
 
 "use server";
 
-import { db } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
 import { autoAIToolSelection } from '@/ai/flows/auto-ai-tool-selection';
 import { revalidatePath } from 'next/cache';
 
@@ -13,41 +11,18 @@ interface SendMessageInput {
   apiKey?: string;
 }
 
-interface ChatDoc {
-  userId: string;
-  tool: string;
-  createdAt: FieldValue;
-  input?: string;
-  providerRaw?: string;
-  providerParsed?: string;
-}
-
-export async function sendMessageAction(input: SendMessageInput) {
+export async function sendMessageAction(input: SendMessageInput): Promise<{ 
+    success: boolean; 
+    aiResponse?: { tool: string; response: string; rawResponse?: string | object }; 
+    error?: string 
+}> {
   const { prompt, tool, userId, apiKey } = input;
   
   if (!userId) {
-    return { error: 'User not authenticated.' };
+    return { success: false, error: 'User not authenticated.' };
   }
   
-  if (!db) {
-    const errorMessage = 'Database connection is not available. Check server configuration.';
-    console.error('sendMessageAction Error:', errorMessage);
-    // Even if db isn't there, we can still call external APIs if a key is provided.
-    // But we can't save the chat history. Let's return an error for now.
-    return { error: errorMessage };
-  }
-
   try {
-    // 1. Add user message to Firestore optimistically from the server
-    const userMessageRef = await db.collection('chats').add({
-      userId,
-      tool,
-      input: prompt,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-
-    revalidatePath('/'); // Revalidate to show user message immediately
-
     let aiResponse: { tool: string; response: string; rawResponse?: string | object };
     
     // Create headers for the AI backend call
@@ -56,7 +31,7 @@ export async function sendMessageAction(input: SendMessageInput) {
       headers['X-Api-Key'] = apiKey;
     }
     
-    // 2. Call AI backend or Genkit flow
+    // Call AI backend or Genkit flow
     if (tool === 'Auto') {
       const result = await autoAIToolSelection({ query: prompt, userId });
       aiResponse = {
@@ -90,36 +65,14 @@ export async function sendMessageAction(input: SendMessageInput) {
       };
     }
 
-    // 3. Add AI response to Firestore
-    const aiMessage: Omit<ChatDoc, 'createdAt' | 'input'> = {
-      userId,
-      tool: aiResponse.tool,
-      providerParsed: aiResponse.response,
-      providerRaw: typeof aiResponse.rawResponse === 'string' 
-        ? aiResponse.rawResponse 
-        : JSON.stringify(aiResponse.rawResponse, null, 2),
-    };
-    await db.collection('chats').add({ ...aiMessage, createdAt: FieldValue.serverTimestamp() });
-
-    revalidatePath('/'); // Revalidate to show AI message
-    return { success: true };
+    // Since we are not using a database, we will return the AI response directly.
+    // The client will be responsible for managing the chat state.
+    revalidatePath('/'); // Revalidate to help update client state if needed
+    return { success: true, aiResponse };
 
   } catch (error) {
     console.error('sendMessageAction Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    // Attempt to save error to chat
-    try {
-      await db.collection('chats').add({
-        userId,
-        tool,
-        providerParsed: `An error occurred: ${errorMessage}`,
-        providerRaw: JSON.stringify({ error: errorMessage }, null, 2),
-        createdAt: FieldValue.serverTimestamp()
-      });
-      revalidatePath('/');
-    } catch (dbError) {
-      console.error('Failed to save error message to Firestore:', dbError);
-    }
-    return { error: errorMessage };
+    return { success: false, error: errorMessage };
   }
 }
