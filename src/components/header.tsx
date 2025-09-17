@@ -1,7 +1,5 @@
 "use client";
 
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,16 +11,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { User } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
-import { LogOut, Bot, User as UserIcon } from 'lucide-react';
+import { Bot, User as UserIcon } from 'lucide-react';
 
 export default function Header({ user }: { user: User }) {
-  const router = useRouter();
-
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
 
   const getInitials = (email: string | null) => {
     if (!email) return 'U';
@@ -58,11 +49,6 @@ export default function Header({ user }: { user: User }) {
               </p>
             </div>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
