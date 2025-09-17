@@ -26,12 +26,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { LoaderCircle, Bot, Plus, Trash2 } from 'lucide-react';
+import { LoaderCircle, Bot } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from './chat-message';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger } from '../ui/sidebar';
-import ChatHistory from './chat-history';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Header from '@/components/header';
 
 
@@ -234,48 +231,17 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
 
   return (
-    <TooltipProvider>
-      <div className="flex h-[calc(100vh-theme(height.16))] w-full">
-        <Sidebar>
-          <SidebarHeader>
-             <div className="flex w-full items-center justify-between">
-              <div className="flex items-center gap-2">
-                  <SidebarTrigger className="md:hidden" />
-                  <h2 className="text-lg font-semibold">Chat History</h2>
-              </div>
-              <div className="flex items-center gap-1">
-                 <Tooltip>
-                      <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewChat}>
-                              <Plus className="h-4 w-4" />
-                              <span className="sr-only">New Chat</span>
-                          </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>New Chat</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowClearConfirm(true)} disabled={messages.length === 0}>
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Clear History</span>
-                          </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Clear History</TooltipContent>
-                  </Tooltip>
-              </div>
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <ChatHistory messages={messages} />
-          </SidebarContent>
-        </Sidebar>
-
-        <div className="flex flex-1 flex-col">
-          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
-             <Header user={user} />
+    <div className="flex h-screen w-full flex-col">
+        <Header 
+            user={user} 
+            onNewChat={handleNewChat} 
+            onClearHistory={() => setShowClearConfirm(true)}
+            isChatEmpty={messages.length === 0}
+        />
+        <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
             <ChatList />
-          </div>
-          <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
+        </div>
+        <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
             <div className="mx-auto max-w-3xl">
               <ChatInput
                 onSendMessage={handleSendMessage}
@@ -283,7 +249,6 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
                 apiKeys={apiKeys}
               />
             </div>
-          </div>
         </div>
         <Dialog
           open={keyPrompt.open}
@@ -340,7 +305,6 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-      </div>
-    </TooltipProvider>
+    </div>
   );
 }

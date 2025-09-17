@@ -3,9 +3,6 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/hooks/use-auth.tsx';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { cookies } from 'next/headers';
-import Header from '@/components/header';
 
 export const metadata: Metadata = {
   title: 'AI Agent Chat',
@@ -17,9 +14,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const layout = cookies().get('sidebar_state');
-  const defaultOpen = layout ? layout.value === 'true' : true;
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -30,9 +24,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          <SidebarProvider defaultOpen={defaultOpen}>
             {children}
-          </SidebarProvider>
         </AuthProvider>
         <Toaster />
       </body>

@@ -22,8 +22,11 @@ export default function Home() {
   if (loading || !user) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
-        <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Loading...</p>
+          <Header user={null} />
+          <div className="flex flex-1 items-center justify-center">
+            <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+            <p className="ml-4 text-muted-foreground">Loading...</p>
+          </div>
       </div>
     );
   }
