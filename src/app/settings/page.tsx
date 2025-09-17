@@ -117,7 +117,7 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6">
-            <Button variant="link" className="p-0 h-auto" disabled={!hasAtLeastOneKey && !fromChat} asChild>
+            <Button variant="link" className="p-0 h-auto" disabled={!hasAtLeastOneKey && fromChat} asChild>
               <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50">
                 <ArrowLeft className="h-4 w-4" />
                 Back to Chat
@@ -144,7 +144,7 @@ export default function SettingsPage() {
                 <Key className="h-6 w-6" />
                 <div>
                   <CardTitle>API Key Management</CardTitle>
-                  <CardDescription>Enter your API keys. They will be stored securely in your browser. Ollama runs locally and does not require a key.</CardDescription>
+                  <CardDescription>Enter your API keys. They will be stored securely in your browser. For Ollama, a key is optional.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -161,11 +161,10 @@ export default function SettingsPage() {
                       <Input
                         id={tool}
                         type="password"
-                        placeholder={tool === 'Ollama' ? 'Not Required' : `Enter ${tool} API Key`}
+                        placeholder={`Enter ${tool} API Key`}
                         value={apiKeys[tool] || ''}
                         onChange={(e) => handleKeyChange(tool, e.target.value)}
                         className="font-mono"
-                        disabled={tool === 'Ollama'}
                       />
                     </div>
                   ))}

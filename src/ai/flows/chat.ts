@@ -94,8 +94,7 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
-        headers['x-goog-api-key'] = input.apiKey || '';
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };
@@ -122,7 +121,9 @@ const chatFlow = ai.defineFlow(
         break;
       case 'Ollama':
         endpoint = 'http://localhost:11434/api/chat';
-        // No API key needed for local Ollama by default
+        if (input.apiKey) {
+          headers['Authorization'] = `Bearer ${input.apiKey}`;
+        }
         body = {
           model: 'llama2',
           messages: [

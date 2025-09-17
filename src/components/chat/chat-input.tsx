@@ -31,7 +31,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
 
   useEffect(() => {
     if (Object.keys(apiKeys).length > 0 || aiTools.includes('Ollama')) {
-      // If a tool is already selected and its key is still valid (or it's Ollama), do nothing.
+      // If a tool is already selected and its key is still valid (or it's Ollama, which might not have a key), do nothing.
       if (selectedTool && (apiKeys[selectedTool] || selectedTool === 'Ollama')) {
         return;
       }
@@ -56,7 +56,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     const tool = useAutoTool ? 'Auto' : selectedTool;
     onSendMessage(prompt, tool);
 
-    const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
+    const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
     if (!isSending && !isManualToolAndKeyMissing) {
        setPrompt('');
     }
@@ -110,7 +110,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                 </Tooltip>
                 <SelectContent>
                   {aiTools.map((tool) => {
-                    const isKeyAvailable = !!apiKeys[tool] || tool === 'Ollama';
+                    const isKeyAvailable = tool === 'Ollama' || !!apiKeys[tool];
                     return (
                       <Tooltip key={tool}>
                         <TooltipTrigger asChild>
@@ -131,7 +131,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                         </TooltipTrigger>
                         {!isKeyAvailable && (
                            <TooltipContent side="right">
-                             <p>{tool === 'Ollama' ? 'Ollama not running' : `API key for ${tool} is not set. Please add it in settings.`}</p>
+                             <p>API key for {tool} is not set. Please add it in settings.</p>
                            </TooltipContent>
                         )}
                       </Tooltip>
