@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getApiKeys, saveApiKeys } from '@/app/actions';
 import Header from '@/components/header';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,11 +27,8 @@ export default function SettingsPage() {
       if (!user) return;
       setLoading(true);
       try {
-        const userDocRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          setApiKeys(docSnap.data().apiKeys || {});
-        }
+        const keys = await getApiKeys(user.uid);
+        setApiKeys(keys);
       } catch (error) {
         console.error("Error fetching API keys:", error);
         toast({
@@ -56,12 +52,15 @@ export default function SettingsPage() {
     if (!user) return;
     setSaving(true);
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { apiKeys }, { merge: true });
-      toast({
-        title: "Success",
-        description: "Your API keys have been saved.",
-      });
+      const result = await saveApiKeys(user.uid, apiKeys);
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Your API keys have been saved.",
+        });
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error("Error saving API keys:", error);
       toast({

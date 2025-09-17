@@ -126,3 +126,18 @@ export async function getApiKeys(userId: string): Promise<Record<string, string>
     return {};
   }
 }
+
+export async function saveApiKeys(userId: string, apiKeys: Record<string, string>): Promise<{success: boolean, error?: string}> {
+    if (!userId) {
+        return { success: false, error: 'User not authenticated.' };
+    }
+    try {
+        const userDocRef = db.collection('users').doc(userId);
+        await userDocRef.set({ apiKeys }, { merge: true });
+        return { success: true };
+    } catch (error) {
+        console.error("Error saving API keys:", error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { success: false, error: errorMessage };
+    }
+}
