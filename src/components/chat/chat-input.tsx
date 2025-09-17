@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Send, LoaderCircle, AlertTriangle } from 'lucide-react';
@@ -27,7 +27,18 @@ const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek'];
 export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {
   const [prompt, setPrompt] = useState('');
   const [useAutoTool, setUseAutoTool] = useState(false);
-  const [selectedTool, setSelectedTool] = useState(aiTools[1]); // Default to Gemini
+  const [selectedTool, setSelectedTool] = useState('');
+
+  useEffect(() => {
+    // Set the default selected tool to the first one that has an API key
+    const availableTool = aiTools.find(tool => apiKeys[tool]);
+    if (availableTool) {
+      setSelectedTool(availableTool);
+    } else {
+      // Fallback if no keys are set, though the user should be on the settings page
+      setSelectedTool(aiTools[1]); // Gemini
+    }
+  }, [apiKeys]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +108,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                             <SelectItem
                               value={tool}
                               disabled={!isKeyAvailable}
-                              className={!isKeyAvailable ? 'cursor-not-allowed' : ''}
+                              className={!isKeyAvailable ? 'cursor-not-allowed text-muted-foreground/50' : ''}
                               onClick={(e) => {
                                 if(!isKeyAvailable) {
                                   e.preventDefault();

@@ -94,8 +94,8 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
   const fetchKeysAndRedirect = React.useCallback(() => {
     const keys = getApiKeysFromStorage(user.uid);
     setApiKeys(keys);
-    // Redirect to settings if Gemini key is missing
-    if (!keys['Gemini']) {
+    // Redirect to settings if NO keys are available at all
+    if (Object.keys(keys).length === 0) {
         router.push('/settings?from=chat');
     }
   }, [user.uid, router]);
@@ -105,7 +105,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     fetchKeysAndRedirect();
     
     // This is the correct way to load messages from storage on mount
-    const loadedMessages = getMessagesFromStorage(user.uid);
+    const loadedMessages = getMessagesFromstorage(user.uid);
     if (loadedMessages.length > 0) {
       setMessages(loadedMessages);
     }
@@ -148,7 +148,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
     // For 'Auto' tool, we need to decide which key to use. Let's default to Gemini.
     if (tool === 'Auto' && !apiKey) {
-      apiKey = apiKeys['Gemini'];
+      apiKey = apiKeys['Gemini']; // Fallback for auto if no direct key is found
     }
 
     if (tool !== 'Auto' && !apiKey) {
@@ -320,5 +320,3 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     </div>
   );
 }
-
-    
