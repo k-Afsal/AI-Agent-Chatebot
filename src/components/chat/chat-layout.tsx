@@ -1,11 +1,10 @@
-
 "use client";
 
 import * as React from 'react';
 import type { User } from 'firebase/auth';
 import Header from '@/components/header';
 import ChatInput from './chat-input';
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { sendMessageAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -61,7 +60,7 @@ export default function ChatLayout({ user }: { user: User }) {
     setApiKeys(keys);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchKeys();
     const handleStorageChange = () => fetchKeys();
     window.addEventListener('storage', handleStorageChange);
@@ -70,7 +69,7 @@ export default function ChatLayout({ user }: { user: User }) {
     };
   }, []);
 
-   useEffect(() => {
+   React.useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
@@ -167,7 +166,7 @@ export default function ChatLayout({ user }: { user: User }) {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar>
+      <Sidebar collapsible='offcanvas'>
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:flex" />
@@ -220,3 +219,5 @@ export default function ChatLayout({ user }: { user: User }) {
     </div>
   );
 }
+
+    
