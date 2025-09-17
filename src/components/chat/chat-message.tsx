@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/collapsible"
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Terminal } from 'lucide-react';
+import Markdown from '@/components/markdown';
 
 export default function ChatMessage({ message, userPhoto }: { message: Message, userPhoto?: string | null }) {
   const isUser = message.role === 'user';
@@ -30,7 +31,11 @@ export default function ChatMessage({ message, userPhoto }: { message: Message, 
             : 'bg-card text-card-foreground'
         )}
       >
-        <p className="whitespace-pre-wrap text-sm">{message.text}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap text-sm">{message.text}</p>
+        ) : (
+          <Markdown content={message.text} />
+        )}
         {!isUser && message.tool && (
            <p className="mt-2 text-xs text-muted-foreground">
              Tool: <span className="font-semibold">{message.tool}</span>
