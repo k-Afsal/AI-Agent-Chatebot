@@ -134,6 +134,7 @@ export async function saveApiKeys(userId: string, apiKeys: Record<string, string
     try {
         const userDocRef = db.collection('users').doc(userId);
         await userDocRef.set({ apiKeys }, { merge: true });
+        revalidatePath('/'); // To update the keys in chat layout
         return { success: true };
     } catch (error) {
         console.error("Error saving API keys:", error);

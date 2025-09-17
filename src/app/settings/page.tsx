@@ -1,8 +1,7 @@
 // src/app/settings/page.tsx
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useState, useEffect, useTransition } from 'react';
 import { getApiKeys, saveApiKeys } from '@/app/actions';
 import Header from '@/components/header';
 import { Input } from '@/components/ui/input';
@@ -15,32 +14,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 
 const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool'];
 
+// Mock user for development without login - should match page.tsx
+const mockUser = {
+  uid: 'mock-user-id',
+  email: 'test@example.com',
+  displayName: 'Test User',
+  photoURL: null,
+};
+
+
 export default function SettingsPage() {
-  const { user } = useAuth();
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   useEffect(() => {
     async function fetchKeys() {
-      if (!user) {
-        // Since we have a mock user, we can try to fetch for that if `user` is null
-        // during development. In a real scenario, we might want to wait for the user.
-        const mockUid = 'mock-user-id';
-        try {
-          const keys = await getApiKeys(mockUid);
-          setApiKeys(keys);
-        } catch (error) {
-           console.error("Error fetching API keys for mock user:", error);
-        } finally {
-            setLoading(false);
-        }
-        return;
-      };
       setLoading(true);
       try {
-        const keys = await getApiKeys(user.uid);
+        // Using mock user since login is removed
+        const keys = await getApiKeys(mockUser.uid);
         setApiKeys(keys);
       } catch (error) {
         console.error("Error fetching API keys:", error);
@@ -55,52 +49,38 @@ export default function SettingsPage() {
     }
 
     fetchKeys();
-  }, [user, toast]);
+  }, [toast]);
 
   const handleKeyChange = (tool: string, value: string) => {
     setApiKeys(prev => ({ ...prev, [tool]: value }));
   };
 
   const handleSaveChanges = async () => {
-    const userId = user?.uid || 'mock-user-id';
-    if (!userId) return;
-    setSaving(true);
-    try {
-      const result = await saveApiKeys(userId, apiKeys);
-      if (result.success) {
+    startTransition(async () => {
+      try {
+        const result = await saveApiKeys(mockUser.uid, apiKeys);
+        if (result.success) {
+          toast({
+            title: "Success",
+            description: "Your API keys have been saved.",
+          });
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (error) {
+        console.error("Error saving API keys:", error);
         toast({
-          title: "Success",
-          description: "Your API keys have been saved.",
+          variant: "destructive",
+          title: "Error",
+          description: "Could not save your API keys.",
         });
-      } else {
-        throw new Error(result.error);
       }
-    } catch (error) {
-      console.error("Error saving API keys:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not save your API keys.",
-      });
-    } finally {
-      setSaving(false);
-    }
+    });
   };
-  
-  // This is a mock user for development since we removed the login page.
-  const mockUser = {
-    uid: 'mock-user-id',
-    email: 'test@example.com',
-    displayName: 'Test User',
-    photoURL: null,
-  };
-  
-  const displayUser = user || mockUser;
-
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <Header user={displayUser as any} />
+      <Header user={mockUser as any} />
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6">
@@ -140,8 +120,8 @@ export default function SettingsPage() {
                       />
                     </div>
                   ))}
-                  <Button type="submit" disabled={saving} className="w-full sm:w-auto">
-                    {saving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+                    {isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Save Changes
                   </Button>
                 </form>
