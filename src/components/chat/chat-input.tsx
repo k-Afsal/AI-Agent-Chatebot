@@ -48,7 +48,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     }
   };
   
-  const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool];
+  const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool] && selectedTool !== 'FreeTool';
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -88,11 +88,34 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                   </TooltipContent>
                 </Tooltip>
                 <SelectContent>
-                  {aiTools.map((tool) => (
-                    <SelectItem key={tool} value={tool} >
-                       {tool}
-                    </SelectItem>
-                  ))}
+                  {aiTools.map((tool) => {
+                    const isKeyAvailable = apiKeys[tool] || tool === 'FreeTool';
+                    return (
+                      <Tooltip key={tool}>
+                        <TooltipTrigger asChild>
+                          <div className='w-full'>
+                            <SelectItem
+                              value={tool}
+                              disabled={!isKeyAvailable}
+                              className={!isKeyAvailable ? 'cursor-not-allowed' : ''}
+                              onClick={(e) => {
+                                if(!isKeyAvailable) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            >
+                               {tool}
+                            </SelectItem>
+                          </div>
+                        </TooltipTrigger>
+                        {!isKeyAvailable && (
+                           <TooltipContent side="right">
+                             <p>API key for {tool} is not set. Please add it in settings.</p>
+                           </TooltipContent>
+                        )}
+                      </Tooltip>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {isManualToolAndKeyMissing && (
