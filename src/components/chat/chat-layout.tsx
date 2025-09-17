@@ -170,7 +170,7 @@ export default function ChatLayout({ user }: { user: User }) {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <SidebarTrigger className="hidden md:flex" />
+            <SidebarTrigger className="md:flex" />
             <h2 className="text-lg font-semibold">Chat History</h2>
           </div>
         </SidebarHeader>
