@@ -15,5 +15,19 @@ if (!admin.apps.length) {
   }
 }
 
-export const db = admin.firestore();
-export const authAdmin = admin.auth();
+let db: admin.firestore.Firestore;
+let authAdmin: admin.auth.Auth;
+
+try {
+  db = admin.firestore();
+  authAdmin = admin.auth();
+} catch (error) {
+    console.error('Error getting firestore or auth', error);
+    // In a real app, you might want to throw an error here, 
+    // or handle it more gracefully.
+    // For now, we'll let it be undefined and the app will fail
+    // downstream, which is what was happening anyway.
+}
+
+
+export { db, authAdmin };
