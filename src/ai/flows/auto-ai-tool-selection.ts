@@ -15,6 +15,7 @@ import {z} from 'genkit';
 const AutoAIToolSelectionInputSchema = z.object({
   query: z.string().describe('The user query to be processed by the AI tool.'),
   userId: z.string().describe('The ID of the user making the query.'),
+  selectedTool: z.string().describe('The tool selected by the user. Can be "Auto".')
 });
 export type AutoAIToolSelectionInput = z.infer<typeof AutoAIToolSelectionInputSchema>;
 
@@ -38,11 +39,28 @@ const selectAITool = ai.defineTool({
   }),
   outputSchema: z.enum(['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool']),
 }, async (input) => {
-  // Simple logic to select a tool. Defaults to Gemini for longer queries.
-  if(input.query.length < 50) {
-      return 'FreeTool'
-  }
-  return 'Gemini';
+    const llmResponse = await ai.generate({
+        prompt: `Based on the following user query, which AI tool would be the most appropriate to use?
+
+        User Query: "${input.query}"
+
+        Available Tools:
+        - GPT: Best for complex reasoning, and creative text generation.
+        - Gemini: A powerful, general-purpose model good for a wide range of tasks.
+        - Purplexcity: Specialized in search and information retrieval.
+        - Grok: Good for conversational AI and humor.
+        - Deepseek: Strong in coding and technical queries.
+        - FreeTool: A simple, free tool for basic questions.
+
+        Select one tool from the list above.`,
+        model: 'googleai/gemini-2.5-flash',
+    });
+    const selectedTool = llmResponse.text.trim();
+    const validTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool'];
+    if (validTools.includes(selectedTool)) {
+        return selectedTool as any;
+    }
+    return 'FreeTool'; // Default fallback
 });
 
 
@@ -51,16 +69,22 @@ const autoAIToolSelectionFlow = ai.defineFlow({
   inputSchema: AutoAIToolSelectionInputSchema,
   outputSchema: AutoAIToolSelectionOutputSchema,
 }, async (input) => {
-  const selectedTool = await selectAITool({ query: input.query });
+  let finalTool = input.selectedTool;
 
+  if (finalTool === 'Auto') {
+    finalTool = await selectAITool({ query: input.query });
+  }
+
+  // For now, regardless of the tool selected, we'll use the default AI model to generate a response.
+  // In a real application, you would have different logic here to call the specific API for each tool.
   const llmResponse = await ai.generate({
-    prompt: input.query,
+    prompt: `Using the persona of the ${finalTool} tool, answer the following query: ${input.query}`,
   });
 
   const response = llmResponse.text;
 
   return {
-    tool: selectedTool,
+    tool: finalTool,
     response: response,
     rawResponse: JSON.stringify(llmResponse.output, null, 2),
   };

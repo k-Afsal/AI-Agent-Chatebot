@@ -23,7 +23,7 @@ export async function sendMessageAction(input: SendMessageInput): Promise<{
   }
   
   try {
-    const result = await autoAIToolSelection({ query: prompt, userId });
+    const result = await autoAIToolSelection({ query: prompt, userId, selectedTool: tool });
     
     revalidatePath('/');
     return { success: true, aiResponse: result };
