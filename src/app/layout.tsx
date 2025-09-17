@@ -2,7 +2,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from '@/hooks/use-auth';
+import { AuthProvider } from '@/hooks/use-auth.tsx';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { cookies } from 'next/headers';
 import Header from '@/components/header';
