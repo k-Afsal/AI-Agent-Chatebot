@@ -105,7 +105,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <main className="flex h-screen flex-col bg-background">
       <Header user={plainUser} />
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-2xl">
@@ -156,6 +156,6 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

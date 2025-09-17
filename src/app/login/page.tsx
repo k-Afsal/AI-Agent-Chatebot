@@ -31,7 +31,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background">
+    <main className="flex h-screen w-full flex-col bg-background">
       <Header user={null} />
       <div className="flex flex-1 items-center justify-center">
         <div className="mx-auto w-full max-w-sm text-center">
@@ -59,6 +59,6 @@ export default function LoginPage() {
           </Button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

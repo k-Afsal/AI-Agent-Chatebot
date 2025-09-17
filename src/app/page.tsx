@@ -37,9 +37,9 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background">
+    <main className="flex h-screen w-full flex-col bg-background">
       <Header user={plainUser} />
       <ChatLayout user={plainUser} />
-    </div>
+    </main>
   );
 }
