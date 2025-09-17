@@ -11,6 +11,115 @@ interface SendMessageInput {
   apiKey?: string;
 }
 
+const getApiEndpoint = (tool: string) => {
+  switch (tool) {
+    case 'GPT':
+      return 'https://api.openai.com/v1/chat/completions';
+    case 'Gemini':
+      return 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    case 'Deepseek':
+      return 'https://api.deepseek.com/chat/completions';
+    // Placeholders for Grok and Perplexcity
+    case 'Grok':
+      return 'https://api.grok.com/v1/chat/completions';
+    case 'Purplexcity': // Typo from original code, should be Perplexcity
+      return 'https://api.perplexcity.ai/v1/respond';
+    default:
+      return null;
+  }
+};
+
+const getRequestOptions = (tool: string, prompt: string, apiKey?: string): RequestInit => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    let body: object;
+
+    switch (tool) {
+        case 'GPT':
+            if(apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+            body = {
+                model: 'gpt-4o-mini',
+                messages: [{ role: 'user', content: prompt }],
+            };
+            break;
+
+        case 'Gemini':
+            const url = getApiEndpoint(tool);
+            if (!url) throw new Error("Invalid tool");
+            // Gemini API key is passed in the URL
+            const fullUrl = `${url}?key=${apiKey}`;
+            // No auth header needed
+            body = {
+                contents: [{ parts: [{ text: prompt }] }],
+            };
+            return {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body),
+                cache: 'no-store',
+                // Overwrite the endpoint to include the key
+                _endpoint: fullUrl 
+            } as RequestInit & {_endpoint?: string};
+
+        case 'Deepseek':
+            if(apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+            body = {
+                model: 'deepseek-chat',
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant.' },
+                    { role: 'user', content: prompt },
+                ],
+            };
+            break;
+        
+        // Placeholder cases for tools without public docs yet
+        case 'Grok':
+            if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+            body = { input: prompt };
+            break;
+        case 'Purplexcity': // Assuming this is Perplexcity
+            if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+            body = { input: prompt };
+            break;
+
+        default:
+            throw new Error(`Unsupported tool: ${tool}`);
+    }
+
+    return {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        cache: 'no-store',
+    };
+};
+
+const parseResponse = (tool: string, data: any): { response: string; rawResponse: object } => {
+  let responseText: string;
+
+  switch (tool) {
+    case 'GPT':
+    case 'Deepseek':
+      responseText = data.choices[0]?.message?.content || 'No response';
+      break;
+    case 'Gemini':
+      responseText = data.candidates[0]?.content?.parts[0]?.text || 'No response';
+      break;
+    case 'Grok':
+    case 'Purplexcity':
+        // These are placeholders, adjust based on actual API response
+      responseText = data.response || data.text || 'No response';
+      break;
+    default:
+      responseText = 'Unsupported tool response format';
+  }
+
+  return {
+    response: responseText,
+    rawResponse: data,
+  };
+};
+
+
 export async function sendMessageAction(input: SendMessageInput): Promise<{ 
     success: boolean; 
     aiResponse?: { tool: string; response: string; rawResponse?: string | object }; 
@@ -25,13 +134,6 @@ export async function sendMessageAction(input: SendMessageInput): Promise<{
   try {
     let aiResponse: { tool: string; response: string; rawResponse?: string | object };
     
-    // Create headers for the AI backend call
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (apiKey) {
-      headers['X-Api-Key'] = apiKey;
-    }
-    
-    // Call AI backend or Genkit flow
     if (tool === 'Auto') {
       const result = await autoAIToolSelection({ query: prompt, userId });
       aiResponse = {
@@ -39,35 +141,43 @@ export async function sendMessageAction(input: SendMessageInput): Promise<{
         response: result.response,
         rawResponse: result.rawResponse,
       };
+    } else if (tool === 'FreeTool') {
+        // FreeTool doesn't have an endpoint, return a mock response
+        aiResponse = {
+            tool: 'FreeTool',
+            response: `This is a mock response from FreeTool for your query: "${prompt}"`,
+            rawResponse: { note: "FreeTool is a mock tool and does not call a real API." }
+        }
     } else {
-      const backendUrl = process.env.AI_BACKEND_URL;
-      if (!backendUrl) {
-        throw new Error('AI_BACKEND_URL is not configured.');
+      const endpoint = getApiEndpoint(tool);
+      if (!endpoint) {
+        throw new Error(`Invalid tool selected: ${tool}`);
       }
       
-      const res = await fetch(`${backendUrl}/api/ai`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ tool, input: prompt, userId }),
-        cache: 'no-store',
-      });
+      const options = getRequestOptions(tool, prompt, apiKey);
+      const url = (options as any)._endpoint || endpoint; // Use special endpoint for Gemini
+      if((options as any)._endpoint) delete (options as any)._endpoint;
+
+
+      const res = await fetch(url, options);
       
+      const responseData = await res.json();
+
       if (!res.ok) {
-        const errorBody = await res.text();
-        throw new Error(`AI backend error: ${res.status} ${errorBody}`);
+        const errorBody = responseData.error?.message || JSON.stringify(responseData);
+        throw new Error(`${tool} API error: ${res.status} ${errorBody}`);
       }
       
-      const data = await res.json();
+      const { response, rawResponse } = parseResponse(tool, responseData);
+
       aiResponse = {
-        tool: data.provider,
-        response: data.provider_parsed,
-        rawResponse: data.provider_raw,
+        tool: tool,
+        response: response,
+        rawResponse: rawResponse,
       };
     }
 
-    // Since we are not using a database, we will return the AI response directly.
-    // The client will be responsible for managing the chat state.
-    revalidatePath('/'); // Revalidate to help update client state if needed
+    revalidatePath('/');
     return { success: true, aiResponse };
 
   } catch (error) {
