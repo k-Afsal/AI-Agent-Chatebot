@@ -4,7 +4,7 @@
 import * as React from 'react';
 import ChatInput from './chat-input';
 import { useState, useTransition, useEffect } from 'react';
-import { sendMessageAction } from '@/app/actions';
+import { chat } from '@/ai/flows/chat';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -152,31 +152,26 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
     startTransition(async () => {
       try {
-        const result = await sendMessageAction({ prompt, tool, userId: user.uid, apiKey });
+        const result = await chat({ query: prompt, selectedTool: tool, userId: user.uid, apiKey });
         
-        if (result?.error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error sending message',
-            description: result.error,
-          });
-          setMessages(prev => prev.filter(m => m.id !== userMessage.id));
-
-        } else if (result?.success && result.aiResponse) {
-            const aiMessage: Message = {
-                id: `ai-${Date.now()}`,
-                role: 'ai',
-                text: result.aiResponse.response,
-                tool: result.aiResponse.tool,
-                providerRaw: typeof result.aiResponse.rawResponse === 'string' 
-                    ? result.aiResponse.rawResponse 
-                    : JSON.stringify(result.aiResponse.rawResponse, null, 2),
-                createdAt: new Date(),
-            };
-            setMessages(prev => [...prev, aiMessage]);
-            setTempApiKey(""); 
-            setKeyPrompt({open: false, tool: null, prompt: null});
+        if (!result) {
+            throw new Error("No response from the AI.");
         }
+       
+        const aiMessage: Message = {
+            id: `ai-${Date.now()}`,
+            role: 'ai',
+            text: result.response,
+            tool: result.tool,
+            providerRaw: typeof result.rawResponse === 'string' 
+                ? result.rawResponse 
+                : JSON.stringify(result.rawResponse, null, 2),
+            createdAt: new Date(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+        setTempApiKey(""); 
+        setKeyPrompt({open: false, tool: null, prompt: null});
+
       } catch (error) {
         toast({
           variant: 'destructive',
