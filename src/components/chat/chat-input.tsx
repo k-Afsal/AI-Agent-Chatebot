@@ -17,32 +17,42 @@ import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ChatInputProps {
-  onSendMessage: (prompt: string, tool: string) => void;
+  onSendMessage: (prompt: string, tool: string, ollamaModel?: string) => void;
   isSending: boolean;
   apiKeys: Record<string, string>;
 }
 
 const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'Hugging Face', 'Ollama'];
+const ollamaModels = ['gpt-oss:20b', 'llama2:latest'];
 
 export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {
   const [prompt, setPrompt] = useState('');
   const [useAutoTool, setUseAutoTool] = useState(false);
   const [selectedTool, setSelectedTool] = useState('');
+  const [selectedOllamaModel, setSelectedOllamaModel] = useState(ollamaModels[1]);
 
   useEffect(() => {
-    if (Object.keys(apiKeys).length > 0 || 'Ollama' in aiTools) {
-      if (selectedTool && (apiKeys[selectedTool] || selectedTool === 'Ollama')) {
-        return;
-      }
-      
-      const availableTool = aiTools.find(tool => apiKeys[tool] || tool === 'Ollama');
-      if (availableTool) {
-        setSelectedTool(availableTool);
-      } else {
-        setSelectedTool('');
-      }
+    if (Object.keys(apiKeys).length > 0) {
+        // If the current selected tool is still valid, do nothing.
+        if (selectedTool && (apiKeys[selectedTool] || selectedTool === 'Ollama')) {
+            return;
+        }
+
+        // Otherwise, find the first available tool and set it.
+        const availableTool = aiTools.find(tool => apiKeys[tool] || tool === 'Ollama');
+        if (availableTool) {
+            setSelectedTool(availableTool);
+        } else {
+            setSelectedTool('');
+        }
     } else {
-      setSelectedTool('');
+        // Handle case where there are no API keys at all.
+        const availableTool = aiTools.find(tool => tool === 'Ollama' && !apiKeys[tool]);
+        if(availableTool) {
+            setSelectedTool(availableTool);
+        } else {
+            setSelectedTool('');
+        }
     }
   }, [apiKeys, selectedTool]);
 
@@ -51,7 +61,8 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     e.preventDefault();
     if (!prompt.trim()) return;
     const tool = useAutoTool ? 'Auto' : selectedTool;
-    onSendMessage(prompt, tool);
+    const ollamaModel = tool === 'Ollama' ? selectedOllamaModel : undefined;
+    onSendMessage(prompt, tool, ollamaModel);
 
     const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
     if (!isSending && !isManualToolAndKeyMissing) {
@@ -93,7 +104,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
               </TooltipContent>
             </Tooltip>
             
-            <div className="relative flex items-center">
+            <div className="relative flex items-center gap-2">
               <Select value={selectedTool} onValueChange={setSelectedTool} disabled={useAutoTool || isSending}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -136,6 +147,25 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                   })}
                 </SelectContent>
               </Select>
+              {!useAutoTool && selectedTool === 'Ollama' && (
+                <Select value={selectedOllamaModel} onValueChange={setSelectedOllamaModel} disabled={isSending}>
+                   <Tooltip>
+                    <TooltipTrigger asChild>
+                      <SelectTrigger className="h-9 w-[150px]">
+                        <SelectValue placeholder="Select model" />
+                      </SelectTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Select the Ollama model to use.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <SelectContent>
+                    {ollamaModels.map((model) => (
+                      <SelectItem key={model} value={model}>{model}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {isManualToolAndKeyMissing && (
                 <Tooltip>
                    <TooltipTrigger asChild>

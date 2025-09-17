@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview This flow handles the main chat functionality, including tool selection and calling the appropriate AI provider.
@@ -17,6 +18,7 @@ const ChatInputSchema = z.object({
   selectedTool: z.string().describe('The tool selected by the user. Can be "Auto".'),
   apiKey: z.string().optional().describe('The API key for the selected tool, if required.'),
   ollamaHost: z.string().optional().describe('The host for the Ollama API.'),
+  ollamaModel: z.string().optional().describe('The model to use for Ollama.'),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
@@ -96,8 +98,7 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-        headers['x-goog-api-key'] = input.apiKey || '';
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };
@@ -129,7 +130,7 @@ const chatFlow = ai.defineFlow(
           headers['Authorization'] = `Bearer ${input.apiKey}`;
         }
         body = {
-          model: 'llama2',
+          model: input.ollamaModel || 'llama2',
           messages: [
             { role: 'system', content: 'You are a helpful AI.' },
             { role: 'user', content: input.query },
@@ -190,7 +191,7 @@ const chatFlow = ai.defineFlow(
       } catch (error) {
         console.error(`Error calling ${finalTool} API:`, error);
         if (finalTool === 'Ollama' && error instanceof TypeError && error.message.includes('fetch failed')) {
-            response = `Error communicating with Ollama. Please ensure the server is running and accessible. If running locally, try using your machine's local IP address (e.g., http://192.168.1.5:11434) instead of localhost.`;
+            response = `Error communicating with Ollama. Please ensure the server is running and accessible. If running locally, try using your machine's local IP address (e.g. http://192.168.1.5:11434) instead of localhost.`;
         } else if (error instanceof TypeError && error.message.includes('fetch failed')) {
             response = `Error communicating with ${finalTool}. Please ensure the local server is running and accessible at ${endpoint}.`;
         } else {

@@ -102,9 +102,9 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     const host = getOllamaHostFromStorage(user.uid);
     setApiKeys(keys);
     setOllamaHost(host);
-    // Redirect to settings if NO keys are available at all, excluding Ollama if it has no key
-    const hasApiKeys = Object.entries(keys).some(([tool, key]) => key.trim() !== '' && tool !== 'Ollama') || keys['Ollama'];
-    if (!hasApiKeys && !keys.Ollama) {
+    // Redirect to settings if NO keys are available at all, excluding Ollama which can run without one
+    const hasAnyKey = Object.values(keys).some(key => !!key);
+    if (!hasAnyKey) {
         router.push('/settings?from=chat');
     }
   }, [user.uid, router]);
@@ -150,7 +150,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
   }, [messages]);
 
 
-  const handleSendMessage = (prompt: string, tool: string) => {
+  const handleSendMessage = (prompt: string, tool: string, ollamaModel?: string) => {
     if (!prompt.trim() || isSending) return;
 
     let apiKey = tempApiKey || apiKeys[tool];
@@ -182,7 +182,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
     startTransition(async () => {
       try {
-        const result = await chat({ query: prompt, selectedTool: tool, userId: user.uid, apiKey, ollamaHost });
+        const result = await chat({ query: prompt, selectedTool: tool, userId: user.uid, apiKey, ollamaHost, ollamaModel });
         
         if (!result) {
             throw new Error("No response from the AI.");
