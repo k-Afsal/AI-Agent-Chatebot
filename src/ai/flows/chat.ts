@@ -189,7 +189,9 @@ const chatFlow = ai.defineFlow(
         }
       } catch (error) {
         console.error(`Error calling ${finalTool} API:`, error);
-        if (error instanceof TypeError && error.message.includes('fetch failed')) {
+        if (finalTool === 'Ollama' && error instanceof TypeError && error.message.includes('fetch failed')) {
+            response = `Error communicating with Ollama. Please ensure the server is running and accessible. If running locally, try using your machine's local IP address (e.g., http://192.168.1.5:11434) instead of localhost.`;
+        } else if (error instanceof TypeError && error.message.includes('fetch failed')) {
             response = `Error communicating with ${finalTool}. Please ensure the local server is running and accessible at ${endpoint}.`;
         } else {
             response = `Error communicating with ${finalTool}. Please check your API key and network connection.`;
