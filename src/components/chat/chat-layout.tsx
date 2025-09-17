@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button"
 import { LoaderCircle, Bot } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from './chat-message';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarTrigger } from '../ui/sidebar';
+import ChatHistory from './chat-history';
 
 
 export interface Message {
@@ -80,7 +82,7 @@ export default function ChatLayout({ user }: { user: User }) {
 
     const apiKey = tempApiKey || apiKeys[tool];
 
-    if (tool !== 'Auto' && !apiKey) {
+    if (tool !== 'Auto' && tool !== 'FreeTool' && !apiKey) {
       setKeyPrompt({ open: true, tool, prompt });
       return;
     }
@@ -164,16 +166,29 @@ export default function ChatLayout({ user }: { user: User }) {
 
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      <Header user={user} />
-      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
-        <ChatList />
-      </div>
-      <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
-        <div className="mx-auto max-w-3xl">
-          <ChatInput onSendMessage={handleSendMessage} isSending={isSending} apiKeys={apiKeys} />
+    <div className="flex h-screen bg-background">
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="hidden md:flex" />
+            <h2 className="text-lg font-semibold">Chat History</h2>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <ChatHistory messages={messages} />
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset className="flex flex-col">
+        <Header user={user} />
+        <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+          <ChatList />
         </div>
-      </div>
+        <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
+          <div className="mx-auto max-w-3xl">
+            <ChatInput onSendMessage={handleSendMessage} isSending={isSending} apiKeys={apiKeys} />
+          </div>
+        </div>
+      </SidebarInset>
        <Dialog open={keyPrompt.open} onOpenChange={(open) => setKeyPrompt(prev => ({ ...prev, open }))}>
         <DialogContent>
           <DialogHeader>

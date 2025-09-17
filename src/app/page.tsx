@@ -1,7 +1,9 @@
+
 "use client";
 
 import ChatLayout from '@/components/chat/chat-layout';
 import type { User } from 'firebase/auth';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 // Mock user for development without login
 const mockUser: User = {
@@ -32,5 +34,9 @@ const mockUser: User = {
 
 
 export default function Home() {
-  return <ChatLayout user={mockUser} />;
+  return (
+    <SidebarProvider>
+      <ChatLayout user={mockUser} />
+    </SidebarProvider>
+  );
 }
