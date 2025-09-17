@@ -22,7 +22,7 @@ interface ChatInputProps {
   apiKeys: Record<string, string>;
 }
 
-const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool'];
+const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek'];
 
 export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {
   const [prompt, setPrompt] = useState('');
@@ -48,7 +48,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     }
   };
   
-  const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool] && selectedTool !== 'FreeTool';
+  const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool];
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -89,7 +89,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                 </Tooltip>
                 <SelectContent>
                   {aiTools.map((tool) => {
-                    const isKeyAvailable = apiKeys[tool] || tool === 'FreeTool';
+                    const isKeyAvailable = apiKeys[tool];
                     return (
                       <Tooltip key={tool}>
                         <TooltipTrigger asChild>

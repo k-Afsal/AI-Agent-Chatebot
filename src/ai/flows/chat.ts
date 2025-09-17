@@ -36,7 +36,7 @@ const selectAITool = ai.defineTool(
     inputSchema: z.object({
       query: z.string().describe('The user query to be processed.'),
     }),
-    outputSchema: z.enum(['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool']),
+    outputSchema: z.enum(['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek']),
   },
   async (input) => {
     const llmResponse = await ai.generate({
@@ -50,17 +50,16 @@ const selectAITool = ai.defineTool(
         - Purplexcity: Specialized in search and information retrieval.
         - Grok: Good for conversational AI and humor.
         - Deepseek: Strong in coding and technical queries.
-        - FreeTool: A simple, free tool for basic questions.
 
         Select one tool from the list above.`,
       model: 'googleai/gemini-2.5-flash',
     });
     const selectedTool = llmResponse.text.trim();
-    const validTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool'];
+    const validTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek'];
     if (validTools.includes(selectedTool)) {
       return selectedTool as any;
     }
-    return 'FreeTool'; // Default fallback
+    return 'Gemini'; // Default fallback
   }
 );
 
@@ -77,7 +76,7 @@ const chatFlow = ai.defineFlow(
       finalTool = await selectAITool({ query: input.query });
     }
 
-    let response: string;
+    let response: string = '';
     let rawResponse: any = {};
     let endpoint = '';
     let headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -119,10 +118,9 @@ const chatFlow = ai.defineFlow(
         response = `Simulating response from Purplexcity for query: "${input.query}"`;
         rawResponse = { note: 'This is a placeholder response as Purplexcity API is not public.' };
         break;
-      case 'FreeTool':
       default:
-        response = `This is a response from the FreeTool for your query: "${input.query}"`;
-        rawResponse = { tool: 'FreeTool' };
+        response = `The tool "${finalTool}" is not recognized. Please select a valid tool.`;
+        rawResponse = { error: 'Invalid tool selected' };
         break;
     }
 

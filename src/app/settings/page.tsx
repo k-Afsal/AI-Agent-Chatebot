@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
 
 
-const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool'];
+const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek'];
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
