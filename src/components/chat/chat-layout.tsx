@@ -43,10 +43,9 @@ export interface Message {
   createdAt: any; // Can be Date object or string from JSON
 }
 
-// This is a plain object now, not a Firebase User type
 interface PlainUser {
   uid: string;
-  email: string | null;
+  username: string | null;
   displayName: string | null;
   photoURL: string | null;
 }
@@ -238,7 +237,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
       <div className="flex h-[calc(100vh-theme(height.16))] w-full">
         <Sidebar>
           <SidebarHeader>
-            <div className="flex w-full items-center justify-between">
+             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
                   <SidebarTrigger className="md:hidden" />
                   <h2 className="text-lg font-semibold">Chat History</h2>
@@ -272,6 +271,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
         <div className="flex flex-1 flex-col">
           <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+             <Header user={user} />
             <ChatList />
           </div>
           <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">

@@ -3,7 +3,6 @@
 
 import { autoAIToolSelection } from '@/ai/flows/auto-ai-tool-selection';
 import { revalidatePath } from 'next/cache';
-import { db } from '@/lib/firebase-admin';
 
 interface SendMessageInput {
   prompt: string;
@@ -17,7 +16,6 @@ const getApiEndpoint = (tool: string) => {
     case 'GPT':
       return 'https://api.openai.com/v1/chat/completions';
     case 'Gemini':
-      // The Gemini key from environment should be used here if no personal key is provided
       const apiKey = process.env.GEMINI_API_KEY;
       return `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     case 'Deepseek':
@@ -45,7 +43,6 @@ const getRequestOptions = (tool: string, prompt: string, apiKey?: string): Reque
             break;
 
         case 'Gemini':
-            // The API key is now in the URL, so we don't need it in the headers if a personal one isn't provided.
             if (apiKey) headers['x-goog-api-key'] = apiKey;
              body = {
                 contents: [{ parts: [{ text: prompt }] }],
@@ -109,14 +106,6 @@ const parseResponse = (tool: string, data: any): { response: string; rawResponse
   };
 };
 
-const maskPersonalData = (prompt: string) => {
-    // Basic masking for email and phone numbers
-    return prompt
-        .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email_masked]')
-        .replace(/(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g, '[phone_masked]');
-};
-
-
 export async function sendMessageAction(input: SendMessageInput): Promise<{ 
     success: boolean; 
     aiResponse?: { tool: string; response: string; rawResponse?: string | object }; 
@@ -153,7 +142,6 @@ export async function sendMessageAction(input: SendMessageInput): Promise<{
       const options = getRequestOptions(tool, prompt, apiKey);
       let url = endpoint;
 
-      // If using Gemini with a personal API key, we need to construct the URL differently
       if (tool === 'Gemini' && apiKey) {
         url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
       }
@@ -177,23 +165,6 @@ export async function sendMessageAction(input: SendMessageInput): Promise<{
       };
     }
     
-    try {
-        if(db) {
-            const logEntry = {
-                userId: userId,
-                prompt: maskPersonalData(prompt),
-                model: aiResponse.tool,
-                rawOutput: JSON.stringify(aiResponse.rawResponse),
-                timestamp: new Date(),
-            };
-            await db.collection('user-prompts').add(logEntry);
-        }
-    } catch (dbError){
-        console.error("Firestore logging failed:", dbError);
-        // We don't want to fail the whole request if only logging fails.
-    }
-
-
     revalidatePath('/');
     return { success: true, aiResponse };
 

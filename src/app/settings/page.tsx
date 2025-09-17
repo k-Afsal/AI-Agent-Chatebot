@@ -99,9 +99,9 @@ export default function SettingsPage() {
   
   const plainUser = {
     uid: user.uid,
-    email: user.email,
-    displayName: user.displayName,
-    photoURL: user.photoURL,
+    username: user.username,
+    displayName: user.username,
+    photoURL: `https://i.pravatar.cc/150?u=${user.uid}`,
   }
 
   return (

@@ -15,13 +15,13 @@ import { Bot, User as UserIcon, Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import * as React from 'react';
-import { signOut } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 
 
 interface PlainUser {
   uid: string;
-  email: string | null;
+  username: string | null;
   displayName: string | null;
   photoURL: string | null;
 }
@@ -30,20 +30,14 @@ export default function Header({ user }: { user: PlainUser | null }) {
   const [isClient, setIsClient] = React.useState(false);
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const { logout } = useAuth();
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const handleLogout = async () => {
-    // Clear local storage
-    localStorage.removeItem('apiKeys');
-    localStorage.removeItem('chatHistory');
-
-    // Sign out from Firebase
-    await signOut();
-
-    // Redirect to login page
+  const handleLogout = () => {
+    logout();
     router.push('/login');
   };
 
@@ -88,7 +82,7 @@ export default function Header({ user }: { user: PlainUser | null }) {
                 {user.displayName ?? 'User'}
               </p>
               <p className="text-xs leading-none text-muted-foreground">
-                {user.email}
+                {user.username}
               </p>
             </div>
           </DropdownMenuLabel>

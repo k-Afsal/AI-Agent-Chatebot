@@ -28,17 +28,15 @@ export default function Home() {
     );
   }
   
-  // Create a plain object for passing to client components
   const plainUser = {
     uid: user.uid,
-    email: user.email,
-    displayName: user.displayName,
-    photoURL: user.photoURL,
+    username: user.username,
+    displayName: user.username, 
+    photoURL: `https://i.pravatar.cc/150?u=${user.uid}`,
   }
 
   return (
     <main className="flex h-screen w-full flex-col bg-background">
-      <Header user={plainUser} />
       <ChatLayout user={plainUser} />
     </main>
   );
