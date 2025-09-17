@@ -103,7 +103,12 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
   useEffect(() => {
     fetchKeysAndRedirect();
-    setMessages(getMessagesFromStorage(user.uid));
+    
+    // This is the correct way to load messages from storage on mount
+    const loadedMessages = getMessagesFromStorage(user.uid);
+    if (loadedMessages.length > 0) {
+      setMessages(loadedMessages);
+    }
 
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === `apiKeys_${user.uid}`) {
@@ -113,14 +118,19 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
         setMessages(getMessagesFromStorage(user.uid));
       }
     };
+    
     window.addEventListener('storage', handleStorageChange);
+    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [user.uid, fetchKeysAndRedirect]);
 
   useEffect(() => {
-    saveMessagesToStorage(user.uid, messages);
+    // Only save if there are messages to prevent overwriting on initial load
+    if (messages.length > 0) {
+      saveMessagesToStorage(user.uid, messages);
+    }
   }, [messages, user.uid]);
 
 
@@ -134,7 +144,12 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
   const handleSendMessage = (prompt: string, tool: string) => {
     if (!prompt.trim() || isSending) return;
 
-    const apiKey = tempApiKey || apiKeys[tool];
+    let apiKey = tempApiKey || apiKeys[tool];
+
+    // For 'Auto' tool, we need to decide which key to use. Let's default to Gemini.
+    if (tool === 'Auto' && !apiKey) {
+      apiKey = apiKeys['Gemini'];
+    }
 
     if (tool !== 'Auto' && !apiKey) {
       setKeyPrompt({ open: true, tool, prompt });
@@ -305,3 +320,5 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     </div>
   );
 }
+
+    
