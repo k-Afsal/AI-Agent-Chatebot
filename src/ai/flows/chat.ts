@@ -95,8 +95,7 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-        headers['x-goog-api-key'] = input.apiKey || '';
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };
@@ -187,7 +186,11 @@ const chatFlow = ai.defineFlow(
         }
       } catch (error) {
         console.error(`Error calling ${finalTool} API:`, error);
-        response = `Error communicating with ${finalTool}. Please check your API key and network connection. If using Ollama, ensure your local server is running.`;
+        if (error instanceof TypeError && error.message === 'fetch failed') {
+            response = `Error communicating with ${finalTool}. Please ensure the local server is running and accessible at ${endpoint}.`;
+        } else {
+            response = `Error communicating with ${finalTool}. Please check your API key and network connection.`;
+        }
         rawResponse = { error: error instanceof Error ? error.message : String(error) };
       }
     }
