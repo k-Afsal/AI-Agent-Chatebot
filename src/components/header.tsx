@@ -11,12 +11,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import type { User } from 'firebase/auth';
 import { Bot, User as UserIcon, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
-export default function Header({ user }: { user: User }) {
+
+interface PlainUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
+export default function Header({ user }: { user: PlainUser }) {
 
   const getInitials = (email: string | null) => {
     if (!email) return 'U';
@@ -26,7 +33,7 @@ export default function Header({ user }: { user: User }) {
   return (
     <header className="sticky top-0 z-10 flex h-16 w-full shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
       <div className="flex items-center gap-2">
-        <SidebarTrigger className="md:hidden" />
+        <SidebarTrigger className="hidden md:flex" />
         <Bot className="h-7 w-7 text-primary" />
         <h1 className="text-xl font-bold tracking-tight text-foreground">
           AIAgentChat

@@ -39,6 +39,14 @@ const mockUser: User = {
   toJSON: () => ({}),
 };
 
+// Create a plain object for passing to client components
+const plainUser = {
+  uid: mockUser.uid,
+  email: mockUser.email,
+  displayName: mockUser.displayName,
+  photoURL: mockUser.photoURL,
+}
+
 
 export default function RootLayout({
   children,
@@ -57,7 +65,7 @@ export default function RootLayout({
         <AuthProvider>
           <SidebarProvider>
             <div className="flex h-screen w-full flex-col bg-background">
-              <Header user={mockUser} />
+              <Header user={plainUser} />
               {children}
             </div>
           </SidebarProvider>
