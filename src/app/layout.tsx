@@ -13,42 +13,6 @@ export const metadata: Metadata = {
   description: 'A Proof of Concept for an AI Agent Chat Interface',
 };
 
-// Mock user for development without login
-const mockUser: User = {
-  uid: 'mock-user-id',
-  email: 'test@example.com',
-  displayName: 'Test User',
-  photoURL: null,
-  emailVerified: true,
-  isAnonymous: false,
-  metadata: {},
-  providerData: [],
-  providerId: 'password',
-  tenantId: null,
-  delete: async () => {},
-  getIdToken: async () => 'mock-token',
-  getIdTokenResult: async () => ({
-    token: 'mock-token',
-    expirationTime: '',
-    authTime: '',
-    issuedAtTime: '',
-    signInProvider: null,
-    signInSecondFactor: null,
-    claims: {},
-  }),
-  reload: async () => {},
-  toJSON: () => ({}),
-};
-
-// Create a plain object for passing to client components
-const plainUser = {
-  uid: mockUser.uid,
-  email: mockUser.email,
-  displayName: mockUser.displayName,
-  photoURL: mockUser.photoURL,
-}
-
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -68,10 +32,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <AuthProvider>
           <SidebarProvider defaultOpen={defaultOpen}>
-            <div className="flex h-screen w-full flex-col bg-background">
-              <Header user={plainUser} />
-              {children}
-            </div>
+            {children}
           </SidebarProvider>
         </AuthProvider>
         <Toaster />

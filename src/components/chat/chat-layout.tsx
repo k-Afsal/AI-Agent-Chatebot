@@ -51,9 +51,9 @@ interface PlainUser {
   photoURL: string | null;
 }
 
-const getApiKeysFromStorage = (): Record<string, string> => {
+const getApiKeysFromStorage = (userId: string): Record<string, string> => {
   if (typeof window === 'undefined') return {};
-  const storedKeys = localStorage.getItem('apiKeys');
+  const storedKeys = localStorage.getItem(`apiKeys_${userId}`);
   try {
     return storedKeys ? JSON.parse(storedKeys) : {};
   } catch (e) {
@@ -62,9 +62,9 @@ const getApiKeysFromStorage = (): Record<string, string> => {
   }
 };
 
-const getMessagesFromStorage = (): Message[] => {
+const getMessagesFromStorage = (userId: string): Message[] => {
     if (typeof window === 'undefined') return [];
-    const storedMessages = localStorage.getItem('chatHistory');
+    const storedMessages = localStorage.getItem(`chatHistory_${userId}`);
     try {
         const parsed = storedMessages ? JSON.parse(storedMessages) : [];
         // Ensure createdAt is a Date object
@@ -75,9 +75,9 @@ const getMessagesFromStorage = (): Message[] => {
     }
 }
 
-const saveMessagesToStorage = (messages: Message[]) => {
+const saveMessagesToStorage = (userId: string, messages: Message[]) => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('chatHistory', JSON.stringify(messages));
+    localStorage.setItem(`chatHistory_${userId}`, JSON.stringify(messages));
 }
 
 
@@ -92,31 +92,35 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
   const { toast } = useToast();
 
-  const fetchKeys = () => {
-    const keys = getApiKeysFromStorage();
+  const fetchKeys = React.useCallback(() => {
+    const keys = getApiKeysFromStorage(user.uid);
     setApiKeys(keys);
-  };
+  }, [user.uid]);
 
   useEffect(() => {
     // Load keys and messages from local storage on mount
     fetchKeys();
-    setMessages(getMessagesFromStorage());
+    setMessages(getMessagesFromStorage(user.uid));
 
     // Listen for storage changes from other tabs
-    const handleStorageChange = () => {
-      fetchKeys();
-      setMessages(getMessagesFromStorage());
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `apiKeys_${user.uid}`) {
+        fetchKeys();
+      }
+      if (e.key === `chatHistory_${user.uid}`) {
+        setMessages(getMessagesFromStorage(user.uid));
+      }
     };
     window.addEventListener('storage', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [user.uid, fetchKeys]);
 
   useEffect(() => {
     // Save messages to local storage whenever they change
-    saveMessagesToStorage(messages);
-  }, [messages]);
+    saveMessagesToStorage(user.uid, messages);
+  }, [messages, user.uid]);
 
 
    useEffect(() => {
@@ -196,7 +200,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
   const handleNewChat = () => {
     if(messages.length > 0){
         setMessages([]);
-        localStorage.removeItem('chatHistory');
+        localStorage.removeItem(`chatHistory_${user.uid}`);
         toast({
             title: "New chat started.",
             description: "Your previous conversation has been cleared.",
@@ -213,7 +217,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     if (messages.length > 0) {
       return (
         <div className="mx-auto w-full max-w-3xl space-y-6 p-4 md:p-6">
-          {messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)}
+          {messages.map((msg) => <ChatMessage key={msg.id} message={msg} userPhoto={user.photoURL} />)}
         </div>
       )
     }
@@ -222,7 +226,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
           <div className="rounded-full bg-primary/10 p-4">
              <Bot className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="text-xl font-semibold">Welcome!</h2>
+          <h2 className="text-xl font-semibold">Welcome, {user.displayName || 'User'}!</h2>
           <p className="text-muted-foreground">Start the conversation by sending a message below.</p>
         </div>
     );

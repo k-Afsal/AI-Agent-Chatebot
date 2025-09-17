@@ -1,5 +1,5 @@
 import { Bot, User as UserIcon } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { Message } from './chat-layout';
 import {
@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Terminal } from 'lucide-react';
 
-export default function ChatMessage({ message }: { message: Message }) {
+export default function ChatMessage({ message, userPhoto }: { message: Message, userPhoto?: string | null }) {
   const isUser = message.role === 'user';
   
   return (
@@ -55,6 +55,7 @@ export default function ChatMessage({ message }: { message: Message }) {
       </div>
       {isUser && (
         <Avatar className="h-9 w-9 border">
+           {userPhoto && <AvatarImage src={userPhoto} alt="User" />}
           <AvatarFallback>
             <UserIcon className="h-5 w-5" />
           </AvatarFallback>

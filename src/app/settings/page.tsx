@@ -10,57 +10,64 @@ import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Key, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import Header from '@/components/header';
+
 
 const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool'];
 
-// Mock user for development without login - should match page.tsx
-const mockUser = {
-  uid: 'mock-user-id',
-  email: 'test@example.com',
-  displayName: 'Test User',
-  photoURL: null,
-};
-
-const getApiKeysFromStorage = (): Record<string, string> => {
-  if (typeof window === 'undefined') return {};
-  const storedKeys = localStorage.getItem('apiKeys');
-  try {
-    return storedKeys ? JSON.parse(storedKeys) : {};
-  } catch (e) {
-    return {};
-  }
-};
-
-const saveApiKeysToStorage = (keys: Record<string, string>) => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('apiKeys', JSON.stringify(keys));
-};
-
-
 export default function SettingsPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
   const [initialApiKeys, setInitialApiKeys] = useState<Record<string, string>>({});
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  const getApiKeysFromStorage = (userId: string): Record<string, string> => {
+    if (typeof window === 'undefined') return {};
+    const storedKeys = localStorage.getItem(`apiKeys_${userId}`);
+    try {
+      return storedKeys ? JSON.parse(storedKeys) : {};
+    } catch (e) {
+      return {};
+    }
+  };
+
+  const saveApiKeysToStorage = (userId: string, keys: Record<string, string>) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(`apiKeys_${userId}`, JSON.stringify(keys));
+  };
+
+
   useEffect(() => {
-    // Reading from localStorage is a client-side only operation.
-    setLoading(true);
-    const keys = getApiKeysFromStorage();
-    setApiKeys(keys);
-    setInitialApiKeys(keys);
-    setLoading(false);
-  }, []);
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (user) {
+      setLoading(true);
+      const keys = getApiKeysFromStorage(user.uid);
+      setApiKeys(keys);
+      setInitialApiKeys(keys);
+      setLoading(false);
+    }
+  }, [user]);
 
   const handleKeyChange = (tool: string, value: string) => {
     setApiKeys(prev => ({ ...prev, [tool]: value }));
   };
 
   const handleSaveChanges = async () => {
+    if (!user) return;
     startTransition(() => {
       try {
-        saveApiKeysToStorage(apiKeys);
+        saveApiKeysToStorage(user.uid, apiKeys);
         setInitialApiKeys(apiKeys);
         toast({
           title: "Success",
@@ -81,8 +88,25 @@ export default function SettingsPage() {
   
   const hasChanges = JSON.stringify(initialApiKeys) !== JSON.stringify(apiKeys);
 
+  if (authLoading || !user) {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+        <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+  
+  const plainUser = {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+  }
+
   return (
-    <div className="flex h-[calc(100vh-theme(height.16))] flex-col bg-background">
+    <div className="flex h-screen flex-col bg-background">
+      <Header user={plainUser} />
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6">

@@ -10,11 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Bot, User as UserIcon, Settings } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Bot, User as UserIcon, Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import * as React from 'react';
+import { signOut } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 
 interface PlainUser {
@@ -24,19 +26,40 @@ interface PlainUser {
   photoURL: string | null;
 }
 
-export default function Header({ user }: { user: PlainUser }) {
+export default function Header({ user }: { user: PlainUser | null }) {
   const [isClient, setIsClient] = React.useState(false);
   const { isMobile } = useSidebar();
+  const router = useRouter();
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
+  const handleLogout = async () => {
+    // Clear local storage
+    localStorage.removeItem('apiKeys');
+    localStorage.removeItem('chatHistory');
 
-  const getInitials = (email: string | null) => {
-    if (!email) return 'U';
-    return email[0].toUpperCase();
+    // Sign out from Firebase
+    await signOut();
+
+    // Redirect to login page
+    router.push('/login');
+  };
+
+  if (!user) {
+    return (
+       <header className="sticky top-0 z-10 flex h-16 w-full shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
+        <div className="flex items-center gap-2">
+          <Bot className="h-7 w-7 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
+            AIAgentChat
+          </h1>
+        </div>
+      </header>
+    )
   }
+
 
   return (
     <header className="sticky top-0 z-10 flex h-16 w-full shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
@@ -51,8 +74,9 @@ export default function Header({ user }: { user: PlainUser }) {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">
             <Avatar className="h-9 w-9 border">
+               {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
               <AvatarFallback className="bg-secondary">
-                {user.photoURL ? <img src={user.photoURL} alt="User"/> : <UserIcon className="h-5 w-5" />}
+                <UserIcon className="h-5 w-5" />
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -75,6 +99,10 @@ export default function Header({ user }: { user: PlainUser }) {
               <span>Settings</span>
             </DropdownMenuItem>
           </Link>
+           <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
