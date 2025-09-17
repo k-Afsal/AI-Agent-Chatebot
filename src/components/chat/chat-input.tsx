@@ -22,7 +22,7 @@ interface ChatInputProps {
   apiKeys: Record<string, string>;
 }
 
-const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'Hugging Face', 'Ollama'];
+const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Deepseek', 'Ollama'];
 const ollamaModels = ['gpt-oss:20b', 'llama2:latest'];
 
 export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {
@@ -30,9 +30,14 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
   const [useAutoTool, setUseAutoTool] = useState(false);
   const [selectedTool, setSelectedTool] = useState('');
   const [selectedOllamaModel, setSelectedOllamaModel] = useState(ollamaModels[1]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (Object.keys(apiKeys).length > 0) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && Object.keys(apiKeys).length > 0) {
         // If the current selected tool is still valid, do nothing.
         if (selectedTool && (apiKeys[selectedTool] || selectedTool === 'Ollama')) {
             return;
@@ -45,16 +50,16 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
         } else {
             setSelectedTool('');
         }
-    } else {
-        // Handle case where there are no API keys at all.
-        const availableTool = aiTools.find(tool => tool === 'Ollama' && !apiKeys[tool]);
-        if(availableTool) {
-            setSelectedTool(availableTool);
+    } else if (isMounted) {
+        // Handle case where there are no API keys at all, but Ollama might be available
+        const ollamaAvailable = aiTools.includes('Ollama');
+        if (ollamaAvailable) {
+          setSelectedTool('Ollama');
         } else {
-            setSelectedTool('');
+          setSelectedTool('');
         }
     }
-  }, [apiKeys, selectedTool]);
+  }, [apiKeys, selectedTool, isMounted]);
 
 
   const handleSubmit = (e: React.FormEvent) => {

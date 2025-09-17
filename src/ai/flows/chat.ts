@@ -40,7 +40,7 @@ const selectAITool = ai.defineTool(
     inputSchema: z.object({
       query: z.string().describe('The user query to be processed.'),
     }),
-    outputSchema: z.enum(['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'Hugging Face', 'Ollama']),
+    outputSchema: z.enum(['GPT', 'Gemini', 'Purplexcity', 'Deepseek', 'Ollama']),
   },
   async (input) => {
     const llmResponse = await ai.generate({
@@ -52,16 +52,14 @@ const selectAITool = ai.defineTool(
         - GPT: Best for complex reasoning, and creative text generation.
         - Gemini: A powerful, general-purpose model good for a wide range of tasks.
         - Purplexcity: Specialized in search and information retrieval.
-        - Grok: Good for conversational AI and humor.
         - Deepseek: Strong in coding and technical queries.
-        - Hugging Face: Good for a wide variety of open models.
         - Ollama: For running local models.
 
         Select one tool from the list above.`,
       model: 'googleai/gemini-1.5-flash',
     });
     const selectedTool = llmResponse.text.trim();
-    const validTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'Hugging Face', 'Ollama'];
+    const validTools = ['GPT', 'Gemini', 'Purplexcity', 'Deepseek', 'Ollama'];
     if (validTools.includes(selectedTool)) {
       return selectedTool as any;
     }
@@ -98,7 +96,10 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+        if (input.apiKey) {
+            headers['x-goog-api-key'] = input.apiKey;
+        }
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };
@@ -115,14 +116,6 @@ const chatFlow = ai.defineFlow(
           stream: false,
         };
         break;
-      case 'Hugging Face':
-        const model = 'mistralai/Mistral-7B-Instruct-v0.2'; // A default model
-        endpoint = `https://api-inference.huggingface.co/models/${model}`;
-        headers['Authorization'] = `Bearer ${input.apiKey}`;
-        body = {
-          inputs: input.query,
-        };
-        break;
       case 'Ollama':
         const ollamaBaseUrl = input.ollamaHost || 'http://localhost:11434';
         endpoint = `${ollamaBaseUrl.replace(/\/$/, '')}/api/chat`;
@@ -136,10 +129,6 @@ const chatFlow = ai.defineFlow(
             { role: 'user', content: input.query },
           ],
         };
-        break;
-      case 'Grok':
-        rawResponse = { note: 'This is a placeholder response as Grok API is not public.' };
-        response = rawResponse.note;
         break;
       case 'Purplexcity':
         response = `Simulating response from Purplexcity for query: "${input.query}"`;
@@ -180,9 +169,6 @@ const chatFlow = ai.defineFlow(
             break;
           case 'Deepseek':
             response = rawResponse.choices[0]?.message?.content || 'No response from Deepseek';
-            break;
-          case 'Hugging Face':
-            response = rawResponse[0]?.generated_text || 'No response from Hugging Face';
             break;
           case 'Ollama':
             response = rawResponse.message?.content || 'No response from Ollama';
