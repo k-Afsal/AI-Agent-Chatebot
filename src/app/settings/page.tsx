@@ -24,6 +24,7 @@ const mockUser = {
 
 
 export default function SettingsPage() {
+  const [initialApiKeys, setInitialApiKeys] = useState<Record<string, string>>({});
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -36,6 +37,7 @@ export default function SettingsPage() {
         // Using mock user since login is removed
         const keys = await getApiKeys(mockUser.uid);
         setApiKeys(keys);
+        setInitialApiKeys(keys);
       } catch (error) {
         console.error("Error fetching API keys:", error);
         toast({
@@ -64,19 +66,23 @@ export default function SettingsPage() {
             title: "Success",
             description: "Your API keys have been saved.",
           });
+          setInitialApiKeys(apiKeys);
         } else {
-          throw new Error(result.error);
+          throw new Error(result.error || "An unknown error occurred while saving.");
         }
       } catch (error) {
         console.error("Error saving API keys:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Could not save your API keys.",
+          description: error instanceof Error ? error.message : "Could not save your API keys.",
         });
       }
     });
   };
+
+  const hasChanges = JSON.stringify(initialApiKeys) !== JSON.stringify(apiKeys);
+  const atLeastOneKey = Object.values(apiKeys).some(key => key.trim() !== '');
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -120,7 +126,7 @@ export default function SettingsPage() {
                       />
                     </div>
                   ))}
-                  <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+                  <Button type="submit" disabled={isPending || !hasChanges || !atLeastOneKey} className="w-full sm:w-auto">
                     {isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Save Changes
                   </Button>
