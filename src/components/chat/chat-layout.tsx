@@ -32,6 +32,7 @@ import ChatMessage from './chat-message';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger } from '../ui/sidebar';
 import ChatHistory from './chat-history';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import Header from '@/components/header';
 
 
 export interface Message {
