@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import type { Message } from './chat-layout';
 import ChatMessage from './chat-message';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Bot } from 'lucide-react';
 
 export default function ChatHistory({ userId }: { userId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
