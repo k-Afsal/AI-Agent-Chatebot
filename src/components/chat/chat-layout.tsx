@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -20,7 +21,7 @@ import { Button } from "@/components/ui/button"
 import { LoaderCircle, Bot } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from './chat-message';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarTrigger } from '../ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger } from '../ui/sidebar';
 import ChatHistory from './chat-history';
 
 
@@ -165,59 +166,77 @@ export default function ChatLayout({ user }: { user: User }) {
 
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar collapsible='offcanvas'>
-        <SidebarHeader>
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="md:flex" />
-            <h2 className="text-lg font-semibold">Chat History</h2>
+    <div className="flex h-screen w-full flex-col bg-background">
+      <Header user={user} />
+      <div className="flex h-[calc(100vh-theme(height.16))] w-full">
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="md:hidden" />
+              <h2 className="text-lg font-semibold">Chat History</h2>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <ChatHistory messages={messages} />
+          </SidebarContent>
+        </Sidebar>
+
+        <div className="flex flex-1 flex-col">
+          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+            <ChatList />
           </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <ChatHistory messages={messages} />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset className="flex flex-col">
-        <Header user={user} />
-        <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
-          <ChatList />
-        </div>
-        <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
-          <div className="mx-auto max-w-3xl">
-            <ChatInput onSendMessage={handleSendMessage} isSending={isSending} apiKeys={apiKeys} />
+          <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
+            <div className="mx-auto max-w-3xl">
+              <ChatInput
+                onSendMessage={handleSendMessage}
+                isSending={isSending}
+                apiKeys={apiKeys}
+              />
+            </div>
           </div>
         </div>
-      </SidebarInset>
-       <Dialog open={keyPrompt.open} onOpenChange={(open) => setKeyPrompt(prev => ({ ...prev, open }))}>
+      </div>
+      <Dialog
+        open={keyPrompt.open}
+        onOpenChange={(open) => setKeyPrompt((prev) => ({ ...prev, open }))}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>API Key Required for {keyPrompt.tool}</DialogTitle>
             <DialogDescription>
-              An API key for {keyPrompt.tool} is not saved. Please enter one to continue or <Link href="/settings" className="underline">go to settings</Link> to save it permanently.
+              An API key for {keyPrompt.tool} is not saved. Please enter one to
+              continue or{' '}
+              <Link href="/settings" className="underline">
+                go to settings
+              </Link>{' '}
+              to save it permanently.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-             <Input 
-                id="api-key-prompt"
-                type="password"
-                placeholder={`Enter ${keyPrompt.tool} API Key`}
-                value={tempApiKey}
-                onChange={(e) => setTempApiKey(e.target.value)}
-             />
+            <Input
+              id="api-key-prompt"
+              type="password"
+              placeholder={`Enter ${keyPrompt.tool} API Key`}
+              value={tempApiKey}
+              onChange={(e) => setTempApiKey(e.target.value)}
+            />
           </div>
           <DialogFooter className="sm:justify-between flex-col-reverse sm:flex-row gap-2">
-             <Button variant="ghost" asChild>
-                <Link href="/settings">Go to Settings</Link>
+            <Button variant="ghost" asChild>
+              <Link href="/settings">Go to Settings</Link>
             </Button>
-            <Button onClick={handleKeyPromptSubmit} disabled={isSending || !tempApiKey.trim()}>
-                {isSending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Submit and Send
-             </Button>
+            <Button
+              onClick={handleKeyPromptSubmit}
+              disabled={isSending || !tempApiKey.trim()}
+            >
+              {isSending ? (
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Submit and Send
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
-
-    
