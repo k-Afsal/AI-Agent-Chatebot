@@ -103,7 +103,7 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Deepseek':
-        endpoint = 'https://api.deepseek.com/chat/completions';
+        endpoint = 'https://api.deepseek.com/v1/chat/completions';
         headers['Authorization'] = `Bearer ${input.apiKey}`;
         body = {
           model: 'deepseek-chat',
