@@ -105,7 +105,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     fetchKeysAndRedirect();
     
     // This is the correct way to load messages from storage on mount
-    const loadedMessages = getMessagesFromstorage(user.uid);
+    const loadedMessages = getMessagesFromStorage(user.uid);
     if (loadedMessages.length > 0) {
       setMessages(loadedMessages);
     }
