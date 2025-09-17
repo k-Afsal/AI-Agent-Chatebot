@@ -92,7 +92,8 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+        headers['x-goog-api-key'] = input.apiKey!;
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };
@@ -133,7 +134,13 @@ const chatFlow = ai.defineFlow(
         });
 
         if (!apiResponse.ok) {
-          throw new Error(`API call failed with status: ${apiResponse.status} ${apiResponse.statusText}`);
+          const errorBody = await apiResponse.text();
+          console.error(`API call failed for ${finalTool}`, {
+              status: apiResponse.status,
+              statusText: apiResponse.statusText,
+              body: errorBody
+          });
+          throw new Error(`API call failed with status: ${apiResponse.status} ${apiResponse.statusText}. Response: ${errorBody}`);
         }
         
         rawResponse = await apiResponse.json();
