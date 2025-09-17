@@ -50,16 +50,18 @@ const autoAIToolSelectionFlow = ai.defineFlow({
   name: 'autoAIToolSelectionFlow',
   inputSchema: AutoAIToolSelectionInputSchema,
   outputSchema: AutoAIToolSelectionOutputSchema,
-  tools: [selectAITool],
 }, async (input) => {
   const selectedTool = await selectAITool({ query: input.query });
-  
-  // The flow now just returns the selected tool. The actual response is mocked in the action.
-  const response = `This is a mock response from ${selectedTool} for your query: "${input.query}"`
+
+  const llmResponse = await ai.generate({
+    prompt: input.query,
+  });
+
+  const response = llmResponse.text;
 
   return {
     tool: selectedTool,
     response: response,
-    rawResponse: JSON.stringify({ note: "This is a mock response to prevent long loading times.", tool: selectedTool }, null, 2),
+    rawResponse: JSON.stringify(llmResponse.output, null, 2),
   };
 });
