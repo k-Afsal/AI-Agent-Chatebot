@@ -30,15 +30,23 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
   const [selectedTool, setSelectedTool] = useState('');
 
   useEffect(() => {
-    // Set the default selected tool to the first one that has an API key
-    const availableTool = aiTools.find(tool => apiKeys[tool]);
-    if (availableTool) {
-      setSelectedTool(availableTool);
-    } else {
-      // Fallback if no keys are set, though the user should be on the settings page
-      setSelectedTool(aiTools[1]); // Gemini
+    if (Object.keys(apiKeys).length > 0) {
+      // If a tool is already selected and its key is still valid, do nothing.
+      if (selectedTool && apiKeys[selectedTool]) {
+        return;
+      }
+      
+      // Set the default selected tool to the first one that has an API key
+      const availableTool = aiTools.find(tool => apiKeys[tool]);
+      if (availableTool) {
+        setSelectedTool(availableTool);
+      } else {
+        // Fallback if for some reason no keys are available (should be handled by parent)
+        setSelectedTool(aiTools[1]); // Gemini
+      }
     }
-  }, [apiKeys]);
+  }, [apiKeys, selectedTool]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +67,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     }
   };
   
-  const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool];
+  const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool];
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -100,7 +108,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                 </Tooltip>
                 <SelectContent>
                   {aiTools.map((tool) => {
-                    const isKeyAvailable = apiKeys[tool];
+                    const isKeyAvailable = !!apiKeys[tool];
                     return (
                       <Tooltip key={tool}>
                         <TooltipTrigger asChild>
@@ -144,7 +152,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
             </div>
           </div>
 
-          <Button type="submit" size="default" disabled={!prompt.trim() || isSending} className="w-28 bg-accent hover:bg-accent/90">
+          <Button type="submit" size="default" disabled={!prompt.trim() || isSending || isManualToolAndKeyMissing} className="w-28 bg-accent hover:bg-accent/90">
             {isSending ? (
               <LoaderCircle className="h-5 w-5 animate-spin" />
             ) : (
