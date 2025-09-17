@@ -91,7 +91,7 @@ const chatFlow = ai.defineFlow(
         endpoint = 'https://api.openai.com/v1/chat/completions';
         headers['Authorization'] = `Bearer ${input.apiKey}`;
         body = {
-          model: 'gpt-4o-mini',
+          model: 'gpt-3.5-turbo',
           messages: [{ role: 'user', content: input.query }],
         };
         break;
