@@ -1,37 +1,32 @@
 import * as admin from 'firebase-admin';
 
-let db: admin.firestore.Firestore;
-let authAdmin: admin.auth.Auth;
+let db: admin.firestore.Firestore | undefined;
+let authAdmin: admin.auth.Auth | undefined;
 
 if (!admin.apps.length) {
   try {
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (serviceAccount) {
       admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: privateKey,
-        }),
+        credential: admin.credential.cert(JSON.parse(serviceAccount)),
       });
       console.log("Firebase Admin SDK initialized successfully.");
+      db = admin.firestore();
+      authAdmin = admin.auth();
     } else {
-      console.log('Firebase Admin SDK environment variables are not fully set. Admin features will be disabled.');
+      console.log('Firebase Admin SDK service account key not found. Admin features will be disabled.');
     }
   } catch (error: any) {
     console.error('Firebase admin initialization error:', error.message);
   }
-}
-
-try {
-  db = admin.firestore();
-  authAdmin = admin.auth();
-} catch (error: any) {
-    console.error('Error getting Firebase services, Admin SDK might not be initialized:', error.message);
-    // @ts-ignore - allow db and authAdmin to be potentially undefined if init fails
-    db = undefined; 
-    // @ts-ignore
-    authAdmin = undefined;
+} else {
+    // If the app is already initialized, get the existing services
+    try {
+        db = admin.firestore();
+        authAdmin = admin.auth();
+    } catch (e){
+        console.error("Could not get services from existing Firebase app", e);
+    }
 }
 
 
