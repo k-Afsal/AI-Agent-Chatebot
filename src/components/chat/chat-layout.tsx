@@ -2,9 +2,8 @@
 "use client";
 
 import * as React from 'react';
-import type { User } from 'firebase/auth';
 import ChatInput from './chat-input';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { sendMessageAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -44,6 +43,14 @@ export interface Message {
   createdAt: any; // Can be Date object or string from JSON
 }
 
+// This is a plain object now, not a Firebase User type
+interface PlainUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
 const getApiKeysFromStorage = (): Record<string, string> => {
   if (typeof window === 'undefined') return {};
   const storedKeys = localStorage.getItem('apiKeys');
@@ -74,7 +81,7 @@ const saveMessagesToStorage = (messages: Message[]) => {
 }
 
 
-export default function ChatLayout({ user }: { user: User }) {
+export default function ChatLayout({ user }: { user: PlainUser }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSending, startTransition] = useTransition();
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
@@ -90,7 +97,7 @@ export default function ChatLayout({ user }: { user: User }) {
     setApiKeys(keys);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Load keys and messages from local storage on mount
     fetchKeys();
     setMessages(getMessagesFromStorage());
@@ -98,7 +105,7 @@ export default function ChatLayout({ user }: { user: User }) {
     // Listen for storage changes from other tabs
     const handleStorageChange = () => {
       fetchKeys();
-      setMessages(getMessagesFromstorage());
+      setMessages(getMessagesFromStorage());
     };
     window.addEventListener('storage', handleStorageChange);
     return () => {
@@ -106,13 +113,13 @@ export default function ChatLayout({ user }: { user: User }) {
     };
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Save messages to local storage whenever they change
     saveMessagesToStorage(messages);
   }, [messages]);
 
 
-   React.useEffect(() => {
+   useEffect(() => {
     // Auto-scroll to bottom
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;

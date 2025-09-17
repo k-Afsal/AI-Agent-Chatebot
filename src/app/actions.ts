@@ -16,13 +16,12 @@ const getApiEndpoint = (tool: string) => {
     case 'GPT':
       return 'https://api.openai.com/v1/chat/completions';
     case 'Gemini':
-      return 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+      return `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
     case 'Deepseek':
       return 'https://api.deepseek.com/chat/completions';
-    // Placeholders for Grok and Perplexcity
     case 'Grok':
       return 'https://api.grok.com/v1/chat/completions';
-    case 'Purplexcity': // Typo from original code, should be Perplexcity
+    case 'Purplexcity':
       return 'https://api.perplexcity.ai/v1/respond';
     default:
       return null;
@@ -43,22 +42,11 @@ const getRequestOptions = (tool: string, prompt: string, apiKey?: string): Reque
             break;
 
         case 'Gemini':
-            const url = getApiEndpoint(tool);
-            if (!url) throw new Error("Invalid tool");
-            // Gemini API key is passed in the URL
-            const fullUrl = `${url}?key=${apiKey}`;
-            // No auth header needed
+            if (apiKey) headers['x-goog-api-key'] = apiKey;
             body = {
                 contents: [{ parts: [{ text: prompt }] }],
             };
-            return {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(body),
-                cache: 'no-store',
-                // Overwrite the endpoint to include the key
-                _endpoint: fullUrl 
-            } as RequestInit & {_endpoint?: string};
+            break;
 
         case 'Deepseek':
             if(apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
@@ -71,12 +59,11 @@ const getRequestOptions = (tool: string, prompt: string, apiKey?: string): Reque
             };
             break;
         
-        // Placeholder cases for tools without public docs yet
         case 'Grok':
             if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
             body = { input: prompt };
             break;
-        case 'Purplexcity': // Assuming this is Perplexcity
+        case 'Purplexcity':
             if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
             body = { input: prompt };
             break;
@@ -106,7 +93,6 @@ const parseResponse = (tool: string, data: any): { response: string; rawResponse
       break;
     case 'Grok':
     case 'Purplexcity':
-        // These are placeholders, adjust based on actual API response
       responseText = data.response || data.text || 'No response';
       break;
     default:
@@ -142,7 +128,6 @@ export async function sendMessageAction(input: SendMessageInput): Promise<{
         rawResponse: result.rawResponse,
       };
     } else if (tool === 'FreeTool') {
-        // FreeTool doesn't have an endpoint, return a mock response
         aiResponse = {
             tool: 'FreeTool',
             response: `This is a mock response from FreeTool for your query: "${prompt}"`,
@@ -155,9 +140,7 @@ export async function sendMessageAction(input: SendMessageInput): Promise<{
       }
       
       const options = getRequestOptions(tool, prompt, apiKey);
-      const url = (options as any)._endpoint || endpoint; // Use special endpoint for Gemini
-      if((options as any)._endpoint) delete (options as any)._endpoint;
-
+      const url = endpoint;
 
       const res = await fetch(url, options);
       
