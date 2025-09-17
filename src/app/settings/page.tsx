@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/header';
 
 
-const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek'];
+const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'Hugging Face', 'Ollama'];
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -117,13 +117,13 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6">
-            <Button variant="link" className="p-0 h-auto" disabled={!hasAtLeastOneKey} asChild>
+            <Button variant="link" className="p-0 h-auto" disabled={!hasAtLeastOneKey && !fromChat} asChild>
               <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50">
                 <ArrowLeft className="h-4 w-4" />
                 Back to Chat
               </Link>
             </Button>
-            {!hasAtLeastOneKey && (
+            {!hasAtLeastOneKey && fromChat && (
                 <p className="text-xs text-destructive mt-1">Please add at least one API key to go back to the chat.</p>
             )}
           </div>
@@ -133,7 +133,7 @@ export default function SettingsPage() {
                 <Info className="h-4 w-4" />
                 <AlertTitle>Welcome!</AlertTitle>
                 <AlertDescription>
-                    To get started, please add your Gemini API key. Other keys are optional.
+                    To get started, please add an API key for at least one service.
                 </AlertDescription>
             </Alert>
           )}
@@ -144,7 +144,7 @@ export default function SettingsPage() {
                 <Key className="h-6 w-6" />
                 <div>
                   <CardTitle>API Key Management</CardTitle>
-                  <CardDescription>Enter your API keys. They will be stored securely in your browser.</CardDescription>
+                  <CardDescription>Enter your API keys. They will be stored securely in your browser. Ollama runs locally and does not require a key.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -161,10 +161,11 @@ export default function SettingsPage() {
                       <Input
                         id={tool}
                         type="password"
-                        placeholder={`Enter ${tool} API Key`}
+                        placeholder={tool === 'Ollama' ? 'Not Required' : `Enter ${tool} API Key`}
                         value={apiKeys[tool] || ''}
                         onChange={(e) => handleKeyChange(tool, e.target.value)}
                         className="font-mono"
+                        disabled={tool === 'Ollama'}
                       />
                     </div>
                   ))}

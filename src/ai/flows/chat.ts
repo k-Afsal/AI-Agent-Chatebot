@@ -36,7 +36,7 @@ const selectAITool = ai.defineTool(
     inputSchema: z.object({
       query: z.string().describe('The user query to be processed.'),
     }),
-    outputSchema: z.enum(['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek']),
+    outputSchema: z.enum(['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'Hugging Face', 'Ollama']),
   },
   async (input) => {
     const llmResponse = await ai.generate({
@@ -50,12 +50,14 @@ const selectAITool = ai.defineTool(
         - Purplexcity: Specialized in search and information retrieval.
         - Grok: Good for conversational AI and humor.
         - Deepseek: Strong in coding and technical queries.
+        - Hugging Face: Good for a wide variety of open models.
+        - Ollama: For running local models.
 
         Select one tool from the list above.`,
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-1.5-flash',
     });
     const selectedTool = llmResponse.text.trim();
-    const validTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek'];
+    const validTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'Hugging Face', 'Ollama'];
     if (validTools.includes(selectedTool)) {
       return selectedTool as any;
     }
@@ -92,7 +94,8 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+        headers['x-goog-api-key'] = input.apiKey || '';
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };
@@ -106,6 +109,26 @@ const chatFlow = ai.defineFlow(
             { role: 'system', content: 'You are a helpful assistant.' },
             { role: 'user', content: input.query },
           ],
+          stream: false,
+        };
+        break;
+      case 'Hugging Face':
+        const model = 'mistralai/Mistral-7B-Instruct-v0.2'; // A default model
+        endpoint = `https://api-inference.huggingface.co/models/${model}`;
+        headers['Authorization'] = `Bearer ${input.apiKey}`;
+        body = {
+          inputs: input.query,
+        };
+        break;
+      case 'Ollama':
+        endpoint = 'http://localhost:11434/api/chat';
+        // No API key needed for local Ollama by default
+        body = {
+          model: 'llama2',
+          messages: [
+            { role: 'system', content: 'You are a helpful AI.' },
+            { role: 'user', content: input.query },
+          ],
         };
         break;
       case 'Grok':
@@ -113,7 +136,6 @@ const chatFlow = ai.defineFlow(
         response = rawResponse.note;
         break;
       case 'Purplexcity':
-        // Placeholder as per user instructions
         response = `Simulating response from Purplexcity for query: "${input.query}"`;
         rawResponse = { note: 'This is a placeholder response as Purplexcity API is not public.' };
         break;
@@ -151,12 +173,18 @@ const chatFlow = ai.defineFlow(
             response = rawResponse.candidates[0]?.content?.parts[0]?.text || 'No response from Gemini';
             break;
           case 'Deepseek':
-            response = raw_response.choices[0]?.message?.content || 'No response from Deepseek';
+            response = rawResponse.choices[0]?.message?.content || 'No response from Deepseek';
+            break;
+          case 'Hugging Face':
+            response = rawResponse[0]?.generated_text || 'No response from Hugging Face';
+            break;
+          case 'Ollama':
+            response = rawResponse.message?.content || 'No response from Ollama';
             break;
         }
       } catch (error) {
         console.error(`Error calling ${finalTool} API:`, error);
-        response = `Error communicating with ${finalTool}. Please check your API key and network connection.`;
+        response = `Error communicating with ${finalTool}. Please check your API key and network connection. If using Ollama, ensure your local server is running.`;
         rawResponse = { error: error instanceof Error ? error.message : String(error) };
       }
     }
@@ -164,7 +192,6 @@ const chatFlow = ai.defineFlow(
 
     return {
       tool: finalTool,
-      // @ts-ignore
       response: response,
       rawResponse: JSON.stringify(rawResponse, null, 2),
     };

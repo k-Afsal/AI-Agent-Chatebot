@@ -22,7 +22,7 @@ interface ChatInputProps {
   apiKeys: Record<string, string>;
 }
 
-const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek'];
+const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'Hugging Face', 'Ollama'];
 
 export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {
   const [prompt, setPrompt] = useState('');
@@ -30,20 +30,22 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
   const [selectedTool, setSelectedTool] = useState('');
 
   useEffect(() => {
-    if (Object.keys(apiKeys).length > 0) {
-      // If a tool is already selected and its key is still valid, do nothing.
-      if (selectedTool && apiKeys[selectedTool]) {
+    if (Object.keys(apiKeys).length > 0 || aiTools.includes('Ollama')) {
+      // If a tool is already selected and its key is still valid (or it's Ollama), do nothing.
+      if (selectedTool && (apiKeys[selectedTool] || selectedTool === 'Ollama')) {
         return;
       }
       
-      // Set the default selected tool to the first one that has an API key
-      const availableTool = aiTools.find(tool => apiKeys[tool]);
+      // Set the default selected tool to the first one that has an API key or is Ollama
+      const availableTool = aiTools.find(tool => apiKeys[tool] || tool === 'Ollama');
       if (availableTool) {
         setSelectedTool(availableTool);
       } else {
-        // Fallback if for some reason no keys are available (should be handled by parent)
-        setSelectedTool(aiTools[1]); // Gemini
+        // Fallback if no keys are available
+        setSelectedTool('');
       }
+    } else {
+      setSelectedTool('');
     }
   }, [apiKeys, selectedTool]);
 
@@ -54,7 +56,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     const tool = useAutoTool ? 'Auto' : selectedTool;
     onSendMessage(prompt, tool);
 
-    const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool];
+    const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
     if (!isSending && !isManualToolAndKeyMissing) {
        setPrompt('');
     }
@@ -67,7 +69,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     }
   };
   
-  const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool];
+  const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -108,7 +110,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                 </Tooltip>
                 <SelectContent>
                   {aiTools.map((tool) => {
-                    const isKeyAvailable = !!apiKeys[tool];
+                    const isKeyAvailable = !!apiKeys[tool] || tool === 'Ollama';
                     return (
                       <Tooltip key={tool}>
                         <TooltipTrigger asChild>
@@ -129,7 +131,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                         </TooltipTrigger>
                         {!isKeyAvailable && (
                            <TooltipContent side="right">
-                             <p>API key for {tool} is not set. Please add it in settings.</p>
+                             <p>{tool === 'Ollama' ? 'Ollama not running' : `API key for ${tool} is not set. Please add it in settings.`}</p>
                            </TooltipContent>
                         )}
                       </Tooltip>
