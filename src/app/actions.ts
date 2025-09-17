@@ -9,6 +9,7 @@ interface SendMessageInput {
   prompt: string;
   tool: string;
   userId: string;
+  apiKey?: string; // Add apiKey to the input
 }
 
 interface ChatDoc {
@@ -21,7 +22,7 @@ interface ChatDoc {
 }
 
 export async function sendMessageAction(input: SendMessageInput) {
-  const { prompt, tool, userId } = input;
+  const { prompt, tool, userId, apiKey } = input;
   
   if (!userId) {
     return { error: 'User not authenticated.' };
@@ -40,6 +41,12 @@ export async function sendMessageAction(input: SendMessageInput) {
 
     let aiResponse: { tool: string; response: string; rawResponse?: string | object };
     
+    // Create headers for the AI backend call
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (apiKey) {
+      headers['X-Api-Key'] = apiKey;
+    }
+    
     // 2. Call AI backend or Genkit flow
     if (tool === 'Auto') {
       const result = await autoAIToolSelection({ query: prompt, userId });
@@ -56,7 +63,7 @@ export async function sendMessageAction(input: SendMessageInput) {
       
       const res = await fetch(`${backendUrl}/api/ai`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({ tool, input: prompt, userId }),
         cache: 'no-store',
       });
@@ -100,5 +107,22 @@ export async function sendMessageAction(input: SendMessageInput) {
     });
     revalidatePath('/');
     return { error: errorMessage };
+  }
+}
+
+export async function getApiKeys(userId: string): Promise<Record<string, string>> {
+  if (!userId) {
+    return {};
+  }
+  try {
+    const userDocRef = db.collection('users').doc(userId);
+    const docSnap = await userDocRef.get();
+    if (docSnap.exists) {
+      return docSnap.data()?.apiKeys || {};
+    }
+    return {};
+  } catch (error) {
+    console.error("Error fetching API keys in server action:", error);
+    return {};
   }
 }

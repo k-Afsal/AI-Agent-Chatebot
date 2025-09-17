@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, LoaderCircle } from 'lucide-react';
+import { Send, LoaderCircle, AlertTriangle } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -18,11 +18,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface ChatInputProps {
   onSendMessage: (prompt: string, tool: string) => void;
   isSending: boolean;
+  apiKeys: Record<string, string>;
 }
 
 const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek', 'FreeTool'];
 
-export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) {
+export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {
   const [prompt, setPrompt] = useState('');
   const [useAutoTool, setUseAutoTool] = useState(true);
   const [selectedTool, setSelectedTool] = useState(aiTools[1]); // Default to Gemini
@@ -32,7 +33,9 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
     if (!prompt.trim()) return;
     const tool = useAutoTool ? 'Auto' : selectedTool;
     onSendMessage(prompt, tool);
-    if (!isSending) {
+    // Don't clear prompt if we need to show the API key dialog
+    const apiKeyNeeded = !useAutoTool && !apiKeys[selectedTool];
+    if (!isSending && !apiKeyNeeded) {
        setPrompt('');
     }
   };
@@ -43,6 +46,8 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
       handleSubmit(e as unknown as React.FormEvent);
     }
   };
+
+  const isCurrentToolKeyMissing = !useAutoTool && !apiKeys[selectedTool];
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -69,25 +74,39 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
               </TooltipContent>
             </Tooltip>
             
-            <Select value={selectedTool} onValueChange={setSelectedTool} disabled={useAutoTool || isSending}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SelectTrigger className="h-9 w-[130px]">
-                    <SelectValue placeholder="Select tool" />
-                  </SelectTrigger>
-                </TooltipTrigger>
-                 <TooltipContent>
-                  <p>Manually select an AI provider.</p>
-                </TooltipContent>
-              </Tooltip>
-              <SelectContent>
-                {aiTools.map((tool) => (
-                  <SelectItem key={tool} value={tool}>
-                    {tool}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative flex items-center">
+              <Select value={selectedTool} onValueChange={setSelectedTool} disabled={useAutoTool || isSending}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SelectTrigger className="h-9 w-[130px]">
+                      <SelectValue placeholder="Select tool" />
+                    </SelectTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Manually select an AI provider.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <SelectContent>
+                  {aiTools.map((tool) => (
+                    <SelectItem key={tool} value={tool}>
+                      {tool}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isCurrentToolKeyMissing && (
+                <Tooltip>
+                   <TooltipTrigger asChild>
+                    <div className="absolute -right-5 top-1/2 -translate-y-1/2">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>API key for {selectedTool} is missing.</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
 
           <Button type="submit" size="default" disabled={!prompt.trim() || isSending} className="w-28 bg-accent hover:bg-accent/90">

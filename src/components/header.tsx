@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { User } from 'firebase/auth';
-import { Bot, User as UserIcon } from 'lucide-react';
+import { Bot, User as UserIcon, Settings } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Header({ user }: { user: User }) {
 
@@ -49,6 +50,13 @@ export default function Header({ user }: { user: User }) {
               </p>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <Link href="/settings">
+            <DropdownMenuItem className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
