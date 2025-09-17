@@ -24,7 +24,20 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function fetchKeys() {
-      if (!user) return;
+      if (!user) {
+        // Since we have a mock user, we can try to fetch for that if `user` is null
+        // during development. In a real scenario, we might want to wait for the user.
+        const mockUid = 'mock-user-id';
+        try {
+          const keys = await getApiKeys(mockUid);
+          setApiKeys(keys);
+        } catch (error) {
+           console.error("Error fetching API keys for mock user:", error);
+        } finally {
+            setLoading(false);
+        }
+        return;
+      };
       setLoading(true);
       try {
         const keys = await getApiKeys(user.uid);
@@ -49,10 +62,11 @@ export default function SettingsPage() {
   };
 
   const handleSaveChanges = async () => {
-    if (!user) return;
+    const userId = user?.uid || 'mock-user-id';
+    if (!userId) return;
     setSaving(true);
     try {
-      const result = await saveApiKeys(user.uid, apiKeys);
+      const result = await saveApiKeys(userId, apiKeys);
       if (result.success) {
         toast({
           title: "Success",
