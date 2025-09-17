@@ -30,12 +30,12 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
   const [selectedTool, setSelectedTool] = useState('');
 
   useEffect(() => {
-    if (Object.keys(apiKeys).length > 0) {
-      if (selectedTool && apiKeys[selectedTool]) {
+    if (Object.keys(apiKeys).length > 0 || 'Ollama' in aiTools) {
+      if (selectedTool && (apiKeys[selectedTool] || selectedTool === 'Ollama')) {
         return;
       }
       
-      const availableTool = aiTools.find(tool => apiKeys[tool]);
+      const availableTool = aiTools.find(tool => apiKeys[tool] || tool === 'Ollama');
       if (availableTool) {
         setSelectedTool(availableTool);
       } else {
@@ -53,7 +53,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     const tool = useAutoTool ? 'Auto' : selectedTool;
     onSendMessage(prompt, tool);
 
-    const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool];
+    const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
     if (!isSending && !isManualToolAndKeyMissing) {
        setPrompt('');
     }
@@ -66,7 +66,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     }
   };
   
-  const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool];
+  const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -107,7 +107,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                 </Tooltip>
                 <SelectContent>
                   {aiTools.map((tool) => {
-                    const isKeyAvailable = !!apiKeys[tool];
+                    const isKeyAvailable = !!apiKeys[tool] || tool === 'Ollama';
                     return (
                       <Tooltip key={tool}>
                         <TooltipTrigger asChild>

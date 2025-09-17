@@ -1,3 +1,4 @@
+
 // src/app/settings/page.tsx
 "use client";
 
@@ -133,7 +134,7 @@ export default function SettingsPage() {
                 <Info className="h-4 w-4" />
                 <AlertTitle>Welcome!</AlertTitle>
                 <AlertDescription>
-                    To get started, please add an API key for at least one service.
+                    To get started, please add an API key for at least one service. You can use Ollama without a key if it's running locally and unsecured.
                 </AlertDescription>
             </Alert>
           )}
