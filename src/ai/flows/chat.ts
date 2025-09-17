@@ -92,8 +92,7 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
-        headers['x-goog-api-key'] = input.apiKey!;
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };
@@ -110,9 +109,8 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Grok':
-         // Placeholder as per user instructions
-        response = `Simulating response from Grok for query: "${input.query}"`;
         rawResponse = { note: 'This is a placeholder response as Grok API is not public.' };
+        response = rawResponse.note;
         break;
       case 'Purplexcity':
         // Placeholder as per user instructions
@@ -153,7 +151,7 @@ const chatFlow = ai.defineFlow(
             response = rawResponse.candidates[0]?.content?.parts[0]?.text || 'No response from Gemini';
             break;
           case 'Deepseek':
-            response = rawResponse.choices[0]?.message?.content || 'No response from Deepseek';
+            response = raw_response.choices[0]?.message?.content || 'No response from Deepseek';
             break;
         }
       } catch (error) {
