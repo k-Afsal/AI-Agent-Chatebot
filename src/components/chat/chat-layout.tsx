@@ -30,6 +30,7 @@ import { LoaderCircle, Bot } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from './chat-message';
 import Header from '@/components/header';
+import { useRouter } from 'next/navigation';
 
 
 export interface Message {
@@ -86,23 +87,27 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
   const [tempApiKey, setTempApiKey] = useState("");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const { toast } = useToast();
 
-  const fetchKeys = React.useCallback(() => {
+  const fetchKeysAndRedirect = React.useCallback(() => {
     const keys = getApiKeysFromStorage(user.uid);
     setApiKeys(keys);
-  }, [user.uid]);
+    // Redirect to settings if Gemini key is missing
+    if (!keys['Gemini']) {
+        router.push('/settings?from=chat');
+    }
+  }, [user.uid, router]);
+
 
   useEffect(() => {
-    // Load keys and messages from local storage on mount
-    fetchKeys();
+    fetchKeysAndRedirect();
     setMessages(getMessagesFromStorage(user.uid));
 
-    // Listen for storage changes from other tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === `apiKeys_${user.uid}`) {
-        fetchKeys();
+        fetchKeysAndRedirect();
       }
       if (e.key === `chatHistory_${user.uid}`) {
         setMessages(getMessagesFromStorage(user.uid));
@@ -112,16 +117,14 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [user.uid, fetchKeys]);
+  }, [user.uid, fetchKeysAndRedirect]);
 
   useEffect(() => {
-    // Save messages to local storage whenever they change
     saveMessagesToStorage(user.uid, messages);
   }, [messages, user.uid]);
 
 
    useEffect(() => {
-    // Auto-scroll to bottom
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
@@ -133,7 +136,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
 
     const apiKey = tempApiKey || apiKeys[tool];
 
-    if (tool !== 'Auto' && tool !== 'FreeTool' && !apiKey) {
+    if (tool !== 'Auto' && !apiKey) {
       setKeyPrompt({ open: true, tool, prompt });
       return;
     }
@@ -146,7 +149,6 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
         createdAt: new Date(),
     };
     
-    // Use a callback with setMessages to ensure we have the latest state
     setMessages(prev => [...prev, userMessage]);
 
 

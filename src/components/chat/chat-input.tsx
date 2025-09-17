@@ -26,7 +26,7 @@ const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Grok', 'Deepseek'];
 
 export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {
   const [prompt, setPrompt] = useState('');
-  const [useAutoTool, setUseAutoTool] = useState(true);
+  const [useAutoTool, setUseAutoTool] = useState(false);
   const [selectedTool, setSelectedTool] = useState(aiTools[1]); // Default to Gemini
 
   const handleSubmit = (e: React.FormEvent) => {
