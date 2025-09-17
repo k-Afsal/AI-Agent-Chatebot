@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This flow handles the main chat functionality, including tool selection and calling the appropriate AI provider.
@@ -94,7 +95,8 @@ const chatFlow = ai.defineFlow(
         };
         break;
       case 'Gemini':
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${input.apiKey}`;
+        endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+        headers['x-goog-api-key'] = input.apiKey || '';
         body = {
           contents: [{ parts: [{ text: input.query }] }],
         };

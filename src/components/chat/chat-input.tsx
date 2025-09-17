@@ -30,18 +30,15 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
   const [selectedTool, setSelectedTool] = useState('');
 
   useEffect(() => {
-    if (Object.keys(apiKeys).length > 0 || aiTools.includes('Ollama')) {
-      // If a tool is already selected and its key is still valid (or it's Ollama, which might not have a key), do nothing.
-      if (selectedTool && (apiKeys[selectedTool] || selectedTool === 'Ollama')) {
+    if (Object.keys(apiKeys).length > 0) {
+      if (selectedTool && apiKeys[selectedTool]) {
         return;
       }
       
-      // Set the default selected tool to the first one that has an API key or is Ollama
-      const availableTool = aiTools.find(tool => apiKeys[tool] || tool === 'Ollama');
+      const availableTool = aiTools.find(tool => apiKeys[tool]);
       if (availableTool) {
         setSelectedTool(availableTool);
       } else {
-        // Fallback if no keys are available
         setSelectedTool('');
       }
     } else {
@@ -56,7 +53,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     const tool = useAutoTool ? 'Auto' : selectedTool;
     onSendMessage(prompt, tool);
 
-    const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
+    const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool];
     if (!isSending && !isManualToolAndKeyMissing) {
        setPrompt('');
     }
@@ -69,7 +66,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     }
   };
   
-  const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
+  const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool];
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -110,7 +107,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                 </Tooltip>
                 <SelectContent>
                   {aiTools.map((tool) => {
-                    const isKeyAvailable = tool === 'Ollama' || !!apiKeys[tool];
+                    const isKeyAvailable = !!apiKeys[tool];
                     return (
                       <Tooltip key={tool}>
                         <TooltipTrigger asChild>
