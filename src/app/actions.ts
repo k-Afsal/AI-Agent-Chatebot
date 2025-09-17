@@ -1,3 +1,4 @@
+
 "use server";
 
 import { db } from '@/lib/firebase-admin';
@@ -9,7 +10,7 @@ interface SendMessageInput {
   prompt: string;
   tool: string;
   userId: string;
-  apiKey?: string; // Add apiKey to the input
+  apiKey?: string;
 }
 
 interface ChatDoc {
@@ -31,6 +32,8 @@ export async function sendMessageAction(input: SendMessageInput) {
   if (!db) {
     const errorMessage = 'Database connection is not available. Check server configuration.';
     console.error('sendMessageAction Error:', errorMessage);
+    // Even if db isn't there, we can still call external APIs if a key is provided.
+    // But we can't save the chat history. Let's return an error for now.
     return { error: errorMessage };
   }
 
@@ -104,56 +107,19 @@ export async function sendMessageAction(input: SendMessageInput) {
   } catch (error) {
     console.error('sendMessageAction Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    await db.collection('chats').add({
-      userId,
-      tool,
-      providerParsed: `An error occurred: ${errorMessage}`,
-      providerRaw: JSON.stringify({ error: errorMessage }, null, 2),
-      createdAt: FieldValue.serverTimestamp()
-    });
-    revalidatePath('/');
+    // Attempt to save error to chat
+    try {
+      await db.collection('chats').add({
+        userId,
+        tool,
+        providerParsed: `An error occurred: ${errorMessage}`,
+        providerRaw: JSON.stringify({ error: errorMessage }, null, 2),
+        createdAt: FieldValue.serverTimestamp()
+      });
+      revalidatePath('/');
+    } catch (dbError) {
+      console.error('Failed to save error message to Firestore:', dbError);
+    }
     return { error: errorMessage };
   }
-}
-
-export async function getApiKeys(userId: string): Promise<Record<string, string>> {
-  if (!userId) {
-    return {};
-  }
-  if (!db) {
-    console.error("Error fetching API keys: Database connection not available.");
-    return {};
-  }
-  try {
-    const userDocRef = db.collection('users').doc(userId);
-    const docSnap = await userDocRef.get();
-    if (docSnap.exists) {
-      return docSnap.data()?.apiKeys || {};
-    }
-    return {};
-  } catch (error) {
-    console.error("Error fetching API keys in server action:", error);
-    return {};
-  }
-}
-
-export async function saveApiKeys(userId: string, apiKeys: Record<string, string>): Promise<{success: boolean, error?: string}> {
-    if (!userId) {
-        return { success: false, error: 'User not authenticated.' };
-    }
-    if (!db) {
-        const errorMessage = 'Database connection is not available. Check server configuration.';
-        console.error('saveApiKeys Error:', errorMessage);
-        return { success: false, error: errorMessage };
-    }
-    try {
-        const userDocRef = db.collection('users').doc(userId);
-        await userDocRef.set({ apiKeys }, { merge: true });
-        revalidatePath('/'); // To update the keys in chat layout
-        return { success: true };
-    } catch (error) {
-        console.error("Error saving API keys:", error);
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-        return { success: false, error: errorMessage };
-    }
 }

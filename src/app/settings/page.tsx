@@ -1,8 +1,8 @@
+
 // src/app/settings/page.tsx
 "use client";
 
 import { useState, useEffect, useTransition } from 'react';
-import { getApiKeys, saveApiKeys } from '@/app/actions';
 import Header from '@/components/header';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,21 @@ const mockUser = {
   photoURL: null,
 };
 
+const getApiKeysFromStorage = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  const storedKeys = localStorage.getItem('apiKeys');
+  try {
+    return storedKeys ? JSON.parse(storedKeys) : {};
+  } catch (e) {
+    return {};
+  }
+};
+
+const saveApiKeysToStorage = (keys: Record<string, string>) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('apiKeys', JSON.stringify(keys));
+};
+
 
 export default function SettingsPage() {
   const [initialApiKeys, setInitialApiKeys] = useState<Record<string, string>>({});
@@ -31,56 +46,40 @@ export default function SettingsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    async function fetchKeys() {
-      setLoading(true);
-      try {
-        // Using mock user since login is removed
-        const keys = await getApiKeys(mockUser.uid);
-        setApiKeys(keys);
-        setInitialApiKeys(keys);
-      } catch (error) {
-        console.error("Error fetching API keys:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not load your API keys.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchKeys();
-  }, [toast]);
+    // Reading from localStorage is a client-side only operation.
+    setLoading(true);
+    const keys = getApiKeysFromStorage();
+    setApiKeys(keys);
+    setInitialApiKeys(keys);
+    setLoading(false);
+  }, []);
 
   const handleKeyChange = (tool: string, value: string) => {
     setApiKeys(prev => ({ ...prev, [tool]: value }));
   };
 
   const handleSaveChanges = async () => {
-    startTransition(async () => {
+    startTransition(() => {
       try {
-        const result = await saveApiKeys(mockUser.uid, apiKeys);
-        if (result.success) {
-          toast({
-            title: "Success",
-            description: "Your API keys have been saved.",
-          });
-          setInitialApiKeys(apiKeys);
-        } else {
-          throw new Error(result.error || "An unknown error occurred while saving.");
-        }
+        saveApiKeysToStorage(apiKeys);
+        setInitialApiKeys(apiKeys);
+        toast({
+          title: "Success",
+          description: "Your API keys have been saved locally.",
+        });
+        // This will trigger a re-fetch in the chat layout if it's rendered
+        window.dispatchEvent(new Event('storage'));
       } catch (error) {
-        console.error("Error saving API keys:", error);
+        console.error("Error saving API keys to localStorage:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: error instanceof Error ? error.message : "Could not save your API keys.",
+          description: "Could not save your API keys to local storage.",
         });
       }
     });
   };
-
+  
   const hasChanges = JSON.stringify(initialApiKeys) !== JSON.stringify(apiKeys);
   const atLeastOneKey = Object.values(apiKeys).some(key => key.trim() !== '');
 
@@ -102,7 +101,7 @@ export default function SettingsPage() {
                 <Key className="h-6 w-6" />
                 <div>
                   <CardTitle>API Key Management</CardTitle>
-                  <CardDescription>Enter your API keys for the different AI providers.</CardDescription>
+                  <CardDescription>Enter your API keys. They will be stored securely in your browser.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -126,7 +125,7 @@ export default function SettingsPage() {
                       />
                     </div>
                   ))}
-                  <Button type="submit" disabled={isPending || !hasChanges || !atLeastOneKey} className="w-full sm:w-auto">
+                  <Button type="submit" disabled={isPending || !hasChanges} className="w-full sm:w-auto">
                     {isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Save Changes
                   </Button>

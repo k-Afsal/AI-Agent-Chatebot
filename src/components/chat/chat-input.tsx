@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -33,9 +34,9 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     if (!prompt.trim()) return;
     const tool = useAutoTool ? 'Auto' : selectedTool;
     onSendMessage(prompt, tool);
-    // Don't clear prompt if we need to show the API key dialog
-    const apiKeyNeeded = !useAutoTool && !apiKeys[selectedTool];
-    if (!isSending && !apiKeyNeeded) {
+
+    const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool];
+    if (!isSending && !isManualToolAndKeyMissing) {
        setPrompt('');
     }
   };
@@ -46,8 +47,8 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
       handleSubmit(e as unknown as React.FormEvent);
     }
   };
-
-  const isCurrentToolKeyMissing = !useAutoTool && !apiKeys[selectedTool];
+  
+  const isManualToolAndKeyMissing = !useAutoTool && !apiKeys[selectedTool];
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -88,16 +89,13 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                 </Tooltip>
                 <SelectContent>
                   {aiTools.map((tool) => (
-                    <SelectItem key={tool} value={tool} disabled={!apiKeys[tool]}>
-                      <div className="flex items-center">
-                        {!apiKeys[tool] && <AlertTriangle className="mr-2 h-4 w-4 text-destructive/70" />}
-                        {tool}
-                      </div>
+                    <SelectItem key={tool} value={tool} >
+                       {tool}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {isCurrentToolKeyMissing && (
+              {isManualToolAndKeyMissing && (
                 <Tooltip>
                    <TooltipTrigger asChild>
                     <div className="pointer-events-none absolute -right-5 top-1/2 -translate-y-1/2">

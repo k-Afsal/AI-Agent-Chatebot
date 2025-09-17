@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { User } from 'firebase/auth';
@@ -5,7 +6,7 @@ import Header from '@/components/header';
 import ChatHistory from './chat-history';
 import ChatInput from './chat-input';
 import { useState, useEffect, useTransition } from 'react';
-import { sendMessageAction, getApiKeys } from '@/app/actions';
+import { sendMessageAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -30,27 +31,43 @@ export interface Message {
   createdAt: any; // Can be Firestore Timestamp or null for optimistic updates
 }
 
+const getApiKeysFromStorage = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  const storedKeys = localStorage.getItem('apiKeys');
+  try {
+    return storedKeys ? JSON.parse(storedKeys) : {};
+  } catch (e) {
+    console.error("Failed to parse API keys from localStorage", e);
+    return {};
+  }
+};
+
+
 export default function ChatLayout({ user }: { user: User }) {
-  const [isSending, setIsSending] = useTransition();
+  const [isSending, startTransition] = useTransition();
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [keyPrompt, setKeyPrompt] = useState<{ open: boolean; tool: string | null; prompt: string | null }>({ open: false, tool: null, prompt: null });
   const [tempApiKey, setTempApiKey] = useState("");
 
   const { toast } = useToast();
 
+  const fetchKeys = () => {
+    const keys = getApiKeysFromStorage();
+    setApiKeys(keys);
+  };
+
   useEffect(() => {
-    async function fetchKeys() {
-      if (user?.uid) {
-        try {
-          const keys = await getApiKeys(user.uid);
-          setApiKeys(keys);
-        } catch (error) {
-          console.error("Failed to fetch API keys on layout mount:", error);
-        }
-      }
-    }
     fetchKeys();
-  }, [user]);
+
+    // Listen for changes from the settings page
+    const handleStorageChange = () => {
+      fetchKeys();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleSendMessage = (prompt: string, tool: string) => {
     if (!prompt.trim() || isSending) return;
@@ -72,9 +89,10 @@ export default function ChatLayout({ user }: { user: User }) {
             title: 'Error sending message',
             description: result.error,
           });
+        } else {
+            setTempApiKey(""); 
+            setKeyPrompt({open: false, tool: null, prompt: null});
         }
-        setTempApiKey(""); // Clear temp key after sending
-        setKeyPrompt({open: false, tool: null, prompt: null});
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -107,7 +125,7 @@ export default function ChatLayout({ user }: { user: User }) {
           <DialogHeader>
             <DialogTitle>API Key Required for {keyPrompt.tool}</DialogTitle>
             <DialogDescription>
-              An API key for {keyPrompt.tool} is not saved. Please enter one to continue or go to settings to save it permanently.
+              An API key for {keyPrompt.tool} is not saved. Please enter one to continue or <Link href="/settings" className="underline">go to settings</Link> to save it permanently.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -119,8 +137,8 @@ export default function ChatLayout({ user }: { user: User }) {
                 onChange={(e) => setTempApiKey(e.target.value)}
              />
           </div>
-          <DialogFooter className="sm:justify-between gap-2">
-            <Button variant="ghost" asChild>
+          <DialogFooter className="sm:justify-between flex-col-reverse sm:flex-row gap-2">
+             <Button variant="ghost" asChild>
                 <Link href="/settings">Go to Settings</Link>
             </Button>
             <Button onClick={handleKeyPromptSubmit} disabled={isSending || !tempApiKey.trim()}>
