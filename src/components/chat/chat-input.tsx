@@ -88,8 +88,11 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                 </Tooltip>
                 <SelectContent>
                   {aiTools.map((tool) => (
-                    <SelectItem key={tool} value={tool}>
-                      {tool}
+                    <SelectItem key={tool} value={tool} disabled={!apiKeys[tool]}>
+                      <div className="flex items-center">
+                        {!apiKeys[tool] && <AlertTriangle className="mr-2 h-4 w-4 text-destructive/70" />}
+                        {tool}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -97,7 +100,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
               {isCurrentToolKeyMissing && (
                 <Tooltip>
                    <TooltipTrigger asChild>
-                    <div className="absolute -right-5 top-1/2 -translate-y-1/2">
+                    <div className="pointer-events-none absolute -right-5 top-1/2 -translate-y-1/2">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
                     </div>
                   </TooltipTrigger>
