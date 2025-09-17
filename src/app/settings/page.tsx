@@ -3,7 +3,6 @@
 "use client";
 
 import { useState, useEffect, useTransition } from 'react';
-import Header from '@/components/header';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -81,11 +80,9 @@ export default function SettingsPage() {
   };
   
   const hasChanges = JSON.stringify(initialApiKeys) !== JSON.stringify(apiKeys);
-  const atLeastOneKey = Object.values(apiKeys).some(key => key.trim() !== '');
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      <Header user={mockUser as any} />
+    <div className="flex h-[calc(100vh-theme(height.16))] flex-col bg-background">
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6">

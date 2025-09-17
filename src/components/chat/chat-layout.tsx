@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import type { User } from 'firebase/auth';
-import Header from '@/components/header';
 import ChatInput from './chat-input';
 import { useState, useTransition } from 'react';
 import { sendMessageAction } from '@/app/actions';
@@ -99,7 +98,7 @@ export default function ChatLayout({ user }: { user: User }) {
     // Listen for storage changes from other tabs
     const handleStorageChange = () => {
       fetchKeys();
-      setMessages(getMessagesFromStorage());
+      setMessages(getMessagesFromstorage());
     };
     window.addEventListener('storage', handleStorageChange);
     return () => {
@@ -109,9 +108,7 @@ export default function ChatLayout({ user }: { user: User }) {
 
   React.useEffect(() => {
     // Save messages to local storage whenever they change
-    if(messages.length > 0){
-        saveMessagesToStorage(messages);
-    }
+    saveMessagesToStorage(messages);
   }, [messages]);
 
 
@@ -190,12 +187,14 @@ export default function ChatLayout({ user }: { user: User }) {
   }
 
   const handleNewChat = () => {
-    setMessages([]);
-    localStorage.removeItem('chatHistory');
-    toast({
-        title: "New chat started.",
-        description: "Your previous conversation has been cleared.",
-    });
+    if(messages.length > 0){
+        setMessages([]);
+        localStorage.removeItem('chatHistory');
+        toast({
+            title: "New chat started.",
+            description: "Your previous conversation has been cleared.",
+        });
+    }
   }
 
   const handleClearHistory = () => {
@@ -225,55 +224,52 @@ export default function ChatLayout({ user }: { user: User }) {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen w-full flex-col bg-background">
-        <Header user={user} />
-        <div className="flex h-[calc(100vh-theme(height.16))] w-full">
-          <Sidebar>
-            <SidebarHeader>
-              <div className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <SidebarTrigger className="md:hidden" />
-                    <h2 className="text-lg font-semibold">Chat History</h2>
-                </div>
-                <div className="flex items-center gap-1">
-                   <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewChat}>
-                                <Plus className="h-4 w-4" />
-                                <span className="sr-only">New Chat</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>New Chat</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowClearConfirm(true)} disabled={messages.length === 0}>
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Clear History</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Clear History</TooltipContent>
-                    </Tooltip>
-                </div>
+      <div className="flex h-[calc(100vh-theme(height.16))] w-full">
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2">
+                  <SidebarTrigger className="md:hidden" />
+                  <h2 className="text-lg font-semibold">Chat History</h2>
               </div>
-            </SidebarHeader>
-            <SidebarContent>
-              <ChatHistory messages={messages} />
-            </SidebarContent>
-          </Sidebar>
-
-          <div className="flex flex-1 flex-col">
-            <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
-              <ChatList />
+              <div className="flex items-center gap-1">
+                 <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewChat}>
+                              <Plus className="h-4 w-4" />
+                              <span className="sr-only">New Chat</span>
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>New Chat</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowClearConfirm(true)} disabled={messages.length === 0}>
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Clear History</span>
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Clear History</TooltipContent>
+                  </Tooltip>
+              </div>
             </div>
-            <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
-              <div className="mx-auto max-w-3xl">
-                <ChatInput
-                  onSendMessage={handleSendMessage}
-                  isSending={isSending}
-                  apiKeys={apiKeys}
-                />
-              </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <ChatHistory messages={messages} />
+          </SidebarContent>
+        </Sidebar>
+
+        <div className="flex flex-1 flex-col">
+          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto">
+            <ChatList />
+          </div>
+          <div className="shrink-0 border-t bg-background/80 p-4 backdrop-blur-sm">
+            <div className="mx-auto max-w-3xl">
+              <ChatInput
+                onSendMessage={handleSendMessage}
+                isSending={isSending}
+                apiKeys={apiKeys}
+              />
             </div>
           </div>
         </div>
