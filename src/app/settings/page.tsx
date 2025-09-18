@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/header';
 
 
-const aiTools = ['GPT', 'Gemini', 'Purplexcity', 'Deepseek', 'Ollama'];
+const aiTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama'];
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -126,7 +126,7 @@ export default function SettingsPage() {
     uid: user.uid,
     username: user.username,
     displayName: user.username,
-    photoURL: `https://i.pravatar.cc/150?u=${user.uid}`,
+    photoURL: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
   }
 
   return (

@@ -11,14 +11,26 @@ import { Bot, LoaderCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/header';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import { User } from 'lucide-react';
+
 
 const USER_CREDENTIALS_KEY = 'user_credentials';
+const AVATAR_OPTIONS = [
+  'https://i.pravatar.cc/150?u=a042581f4e29026704d',
+  'https://i.pravatar.cc/150?u=a042581f4e29026704f',
+  'https://i.pravatar.cc/150?u=a042581f4e29026704a',
+  'https://i.pravatar.cc/150?u=a042581f4e29026704b',
+  'https://i.pravatar.cc/150?u=a042581f4e29026704c',
+]
 
 export default function LoginPage() {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState(AVATAR_OPTIONS[0]);
   const { user, login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -60,10 +72,10 @@ export default function LoginPage() {
             if (existingUsers[username]) {
                 throw new Error("Username already exists. Please try to sign in.");
             }
-            existingUsers[username] = password;
+            existingUsers[username] = { password, photoURL: selectedAvatar };
             localStorage.setItem(USER_CREDENTIALS_KEY, JSON.stringify(existingUsers));
             
-            const newUser = { uid: username, username };
+            const newUser = { uid: username, username, photoURL: selectedAvatar };
             login(newUser);
 
             toast({ title: "Account created successfully!" });
@@ -75,17 +87,19 @@ export default function LoginPage() {
             
             // Hardcoded admin check
             if (username === 'admin' && password === 'admin') {
-                const adminUser = { uid: 'admin', username: 'admin' };
+                const adminUser = { uid: 'admin', username: 'admin', photoURL: 'https://i.pravatar.cc/150?u=admin' };
                 login(adminUser);
                 router.push('/');
                 return;
             }
 
-            if (!existingUsers[username] || existingUsers[username] !== password) {
+            const storedUser = existingUsers[username];
+            
+            if (!storedUser || storedUser.password !== password) {
                 throw new Error("Invalid username or password.");
             }
 
-            const loggedInUser = { uid: username, username };
+            const loggedInUser = { uid: username, username, photoURL: storedUser.photoURL || `https://i.pravatar.cc/150?u=${username}` };
             login(loggedInUser);
             router.push('/');
         }
@@ -117,6 +131,21 @@ export default function LoginPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                {isSignUp && (
+                    <div className="mb-6">
+                        <Label className="mb-3 block text-center">Choose your avatar</Label>
+                        <div className="flex justify-center gap-3">
+                        {AVATAR_OPTIONS.map((avatarUrl) => (
+                            <button key={avatarUrl} type="button" onClick={() => setSelectedAvatar(avatarUrl)}>
+                                <Avatar className={cn("h-12 w-12 border-2", selectedAvatar === avatarUrl ? "border-primary" : "border-transparent")}>
+                                    <AvatarImage src={avatarUrl} alt="Avatar" />
+                                    <AvatarFallback><User /></AvatarFallback>
+                                </Avatar>
+                            </button>
+                        ))}
+                        </div>
+                    </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="username">Username</Label>
@@ -170,3 +199,4 @@ export default function LoginPage() {
     </main>
   );
 }
+

@@ -7,6 +7,7 @@ import { useState, useEffect, createContext, useContext, ReactNode, useCallback 
 export interface SimpleUser {
   uid: string;
   username: string;
+  photoURL?: string;
 }
 
 interface AuthContextType {

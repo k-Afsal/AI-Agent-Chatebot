@@ -35,7 +35,7 @@ export default function Home() {
     uid: user.uid,
     username: user.username,
     displayName: user.username, 
-    photoURL: `https://i.pravatar.cc/150?u=${user.uid}`,
+    photoURL: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
   }
 
   return (
