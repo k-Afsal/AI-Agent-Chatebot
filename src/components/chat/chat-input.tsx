@@ -22,7 +22,7 @@ interface ChatInputProps {
   apiKeys: Record<string, string>;
 }
 
-const aiTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter', 'Cohere'];
+const aiTools = ['Gemini', 'Ollama', 'OpenRouter', 'Cohere'];
 const ollamaModels = ['gpt-oss:20b', 'llama2:latest'];
 
 export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {

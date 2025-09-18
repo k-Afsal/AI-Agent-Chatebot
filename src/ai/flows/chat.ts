@@ -40,7 +40,7 @@ const selectAITool = ai.defineTool(
     inputSchema: z.object({
       query: z.string().describe('The user query to be processed.'),
     }),
-    outputSchema: z.enum(['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter', 'Cohere']),
+    outputSchema: z.enum(['Gemini', 'Ollama', 'OpenRouter', 'Cohere']),
   },
   async (input) => {
     const llmResponse = await ai.generate({
@@ -49,9 +49,7 @@ const selectAITool = ai.defineTool(
         User Query: "${input.query}"
 
         Available Tools:
-        - GPT: Best for complex reasoning, and creative text generation.
         - Gemini: A powerful, general-purpose model good for a wide range of tasks.
-        - Deepseek: Strong in coding and technical queries.
         - Ollama: For running local models.
         - OpenRouter: Access to a wide variety of models, good for experimentation.
         - Cohere: Powerful models for enterprise use cases.
@@ -60,7 +58,7 @@ const selectAITool = ai.defineTool(
       model: 'googleai/gemini-1.5-flash',
     });
     const selectedTool = llmResponse.text.trim();
-    const validTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter', 'Cohere'];
+    const validTools = ['Gemini', 'Ollama', 'OpenRouter', 'Cohere'];
     if (validTools.includes(selectedTool)) {
       return selectedTool as any;
     }
@@ -88,14 +86,6 @@ const chatFlow = ai.defineFlow(
     let body: any = {};
 
     switch (finalTool) {
-      case 'GPT':
-        endpoint = 'https://api.openai.com/v1/chat/completions';
-        headers['Authorization'] = `Bearer ${input.apiKey}`;
-        body = {
-          model: 'gpt-3.5-turbo',
-          messages: [{ role: 'user', content: input.query }],
-        };
-        break;
       case 'Gemini':
         endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
         if (input.apiKey) {
@@ -103,18 +93,6 @@ const chatFlow = ai.defineFlow(
         }
         body = {
           contents: [{ parts: [{ text: input.query }] }],
-        };
-        break;
-      case 'Deepseek':
-        endpoint = 'https://api.deepseek.com/v1/chat/completions';
-        headers['Authorization'] = `Bearer ${input.apiKey}`;
-        body = {
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: 'You are a helpful assistant.' },
-            { role: 'user', content: input.query },
-          ],
-          stream: false,
         };
         break;
       case 'Ollama':
@@ -176,11 +154,7 @@ const chatFlow = ai.defineFlow(
         rawResponse = await apiResponse.json();
 
         switch (finalTool) {
-          case 'GPT':
           case 'OpenRouter':
-            response = rawResponse.choices[0]?.message?.content || `No response from ${finalTool}`;
-            break;
-          case 'Deepseek':
             response = rawResponse.choices[0]?.message?.content || `No response from ${finalTool}`;
             break;
           case 'Gemini':
