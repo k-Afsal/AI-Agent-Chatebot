@@ -1,4 +1,3 @@
-
 // src/app/settings/page.tsx
 "use client";
 
@@ -16,7 +15,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/header';
 
 
-const aiTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter'];
+const aiTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter', 'Cohere'];
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();

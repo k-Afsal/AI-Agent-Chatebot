@@ -40,7 +40,7 @@ const selectAITool = ai.defineTool(
     inputSchema: z.object({
       query: z.string().describe('The user query to be processed.'),
     }),
-    outputSchema: z.enum(['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter']),
+    outputSchema: z.enum(['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter', 'Cohere']),
   },
   async (input) => {
     const llmResponse = await ai.generate({
@@ -54,12 +54,13 @@ const selectAITool = ai.defineTool(
         - Deepseek: Strong in coding and technical queries.
         - Ollama: For running local models.
         - OpenRouter: Access to a wide variety of models, good for experimentation.
+        - Cohere: Powerful models for enterprise use cases.
 
         Select one tool from the list above.`,
       model: 'googleai/gemini-1.5-flash',
     });
     const selectedTool = llmResponse.text.trim();
-    const validTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter'];
+    const validTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter', 'Cohere'];
     if (validTools.includes(selectedTool)) {
       return selectedTool as any;
     }
@@ -138,6 +139,15 @@ const chatFlow = ai.defineFlow(
           messages: [{ role: 'user', content: input.query }],
         };
         break;
+      case 'Cohere':
+        endpoint = 'https://api.cohere.com/v1/chat';
+        headers['Authorization'] = `Bearer ${input.apiKey}`;
+        body = {
+          message: input.query,
+          model: 'command-r',
+          stream: false,
+        };
+        break;
       default:
         response = `The tool "${finalTool}" is not recognized. Please select a valid tool.`;
         rawResponse = { error: 'Invalid tool selected' };
@@ -166,8 +176,10 @@ const chatFlow = ai.defineFlow(
 
         switch (finalTool) {
           case 'GPT':
-          case 'Deepseek':
           case 'OpenRouter':
+            response = rawResponse.choices[0]?.message?.content || `No response from ${finalTool}`;
+            break;
+          case 'Deepseek':
             response = rawResponse.choices[0]?.message?.content || `No response from ${finalTool}`;
             break;
           case 'Gemini':
@@ -175,6 +187,9 @@ const chatFlow = ai.defineFlow(
             break;
           case 'Ollama':
             response = rawResponse.message?.content || 'No response from Ollama';
+            break;
+          case 'Cohere':
+            response = rawResponse.text || `No response from ${finalTool}`;
             break;
         }
       } catch (error) {

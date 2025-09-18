@@ -22,7 +22,7 @@ interface ChatInputProps {
   apiKeys: Record<string, string>;
 }
 
-const aiTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter'];
+const aiTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter', 'Cohere'];
 const ollamaModels = ['gpt-oss:20b', 'llama2:latest'];
 
 export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInputProps) {
@@ -40,23 +40,20 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
     if (isMounted) {
       const hasApiKeys = Object.keys(apiKeys).length > 0;
       
-      // If the currently selected tool is still valid (has a key or is Ollama without a key needed), do nothing.
+      // If the currently selected tool is still valid (has a key or is Ollama), do nothing.
       if (selectedTool && (apiKeys[selectedTool] || selectedTool === 'Ollama')) {
           return;
       }
 
       // Find the first available tool and set it as default.
-      // For Ollama, we consider it "available" even without a key, unless a key exists for another tool.
-      const firstAvailableTool = aiTools.find(tool => apiKeys[tool]);
+      const firstAvailableTool = aiTools.find(tool => apiKeys[tool] || tool === 'Ollama');
       if (firstAvailableTool) {
           setSelectedTool(firstAvailableTool);
-      } else if (aiTools.includes('Ollama')) { // Fallback to Ollama if no other keys are present
-          setSelectedTool('Ollama');
       } else {
           setSelectedTool('');
       }
     }
-  }, [apiKeys, isMounted]);
+  }, [apiKeys, isMounted, selectedTool]);
 
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -127,10 +124,10 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                           <div className='w-full'>
                             <SelectItem
                               value={tool}
-                              disabled={!isKeyAvailable && tool !== 'Ollama'}
-                              className={!isKeyAvailable && tool !== 'Ollama' ? 'cursor-not-allowed text-muted-foreground/50' : ''}
+                              disabled={!isKeyAvailable}
+                              className={!isKeyAvailable ? 'cursor-not-allowed text-muted-foreground/50' : ''}
                               onClick={(e) => {
-                                if(!isKeyAvailable && tool !== 'Ollama') {
+                                if(!isKeyAvailable) {
                                   e.preventDefault();
                                 }
                               }}
@@ -139,7 +136,7 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
                             </SelectItem>
                           </div>
                         </TooltipTrigger>
-                        {!isKeyAvailable && tool !== 'Ollama' && (
+                        {!isKeyAvailable && (
                            <TooltipContent side="right">
                              <p>API key for {tool} is not set. Please add it in settings.</p>
                            </TooltipContent>
