@@ -34,13 +34,13 @@ export default function Home() {
   const plainUser = {
     uid: user.uid,
     username: user.username,
-    displayName: user.username, 
+    displayName: user.username,
     photoURL: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
   }
 
   return (
     <main className="flex h-screen w-full flex-col bg-background">
-      <ChatLayout user={plainUser} />
+      <ChatLayout user={plainUser}/>
     </main>
   );
 }

@@ -77,6 +77,10 @@ export default function ChatInput({ onSendMessage, isSending, apiKeys }: ChatInp
   };
   
   const isManualToolAndKeyMissing = !useAutoTool && selectedTool && !apiKeys[selectedTool] && selectedTool !== 'Ollama';
+  
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <TooltipProvider delayDuration={200}>
