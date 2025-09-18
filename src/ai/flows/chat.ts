@@ -190,7 +190,7 @@ const chatFlow = ai.defineFlow(
             response = rawResponse.message?.content || 'No response from Ollama';
             break;
           case 'Cohere':
-            response = rawResponse.choices[0]?.message?.content || rawResponse.text || `No response from ${finalTool}`;
+            response = rawResponse.text || rawResponse.choices?.[0]?.message?.content || `No response from ${finalTool}`;
             break;
         }
       } catch (error) {
