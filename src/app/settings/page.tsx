@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/header';
 
 
-const aiTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama'];
+const aiTools = ['GPT', 'Gemini', 'Deepseek', 'Ollama', 'OpenRouter'];
 
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
