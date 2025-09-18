@@ -115,9 +115,7 @@ export default function ChatLayout({ user }: { user: PlainUser }) {
     
     // This is the correct way to load messages from storage on mount
     const loadedMessages = getMessagesFromStorage(user.uid);
-    if (loadedMessages.length > 0) {
-      setMessages(loadedMessages);
-    }
+    setMessages(loadedMessages);
 
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === `apiKeys_${user.uid}` || e.key === `ollamaHost_${user.uid}`) {
