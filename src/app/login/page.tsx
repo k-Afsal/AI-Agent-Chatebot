@@ -26,6 +26,7 @@ const AVATAR_OPTIONS = [
 ]
 
 export default function LoginPage() {
+  const [isClient, setIsClient] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [username, setUsername] = useState('');
@@ -34,14 +35,18 @@ export default function LoginPage() {
   const { user, login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-
+  
   useEffect(() => {
-    // Check if a user is already created to decide the default mode
+    setIsClient(true);
+    // This effect runs only on the client
     if (localStorage.getItem(USER_CREDENTIALS_KEY)) {
       setIsSignUp(false);
     } else {
       setIsSignUp(true);
     }
+  }, []);
+
+  useEffect(() => {
     // If user is already logged in (from session), redirect
     if (user) {
         router.push('/');
@@ -115,6 +120,17 @@ export default function LoginPage() {
     }
   };
 
+  if (!isClient) {
+    return (
+       <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+          <Header user={null} />
+          <div className="flex flex-1 items-center justify-center">
+            <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+            <p className="ml-4 text-muted-foreground">Loading...</p>
+          </div>
+      </div>
+    );
+  }
 
   return (
     <main className="flex h-screen w-full flex-col bg-background">
@@ -199,4 +215,3 @@ export default function LoginPage() {
     </main>
   );
 }
-

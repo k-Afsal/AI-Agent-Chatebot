@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // This effect runs only on the client
     try {
       const storedUser = localStorage.getItem(USER_STORAGE_KEY);
       if (storedUser) {
@@ -49,10 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     const userId = user?.uid;
+    // Clear all user-specific data
     if(userId) {
-        localStorage.removeItem(`apiKeys_${userId}`);
-        localStorage.removeItem(`chatHistory_${userId}`);
-        localStorage.removeItem(`ollamaHost_${userId}`);
+        // This makes sure we clear all keys associated with the user
+        Object.keys(localStorage).forEach(key => {
+            if(key.endsWith(`_${userId}`)) {
+                localStorage.removeItem(key);
+            }
+        });
     }
     localStorage.removeItem(USER_STORAGE_KEY);
     setUser(null);
