@@ -121,10 +121,8 @@ const chatFlow = ai.defineFlow(
         endpoint = 'https://api.cohere.com/v1/chat';
         headers['Authorization'] = `Bearer ${input.apiKey}`;
         body = {
-          model: 'command-r-plus',
-          messages: [
-            { "role": "user", "content": input.query }
-          ],
+          model: 'command-a-03-2025',
+          message: input.query
         };
         break;
       default:
