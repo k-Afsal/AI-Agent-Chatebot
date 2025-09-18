@@ -143,9 +143,10 @@ const chatFlow = ai.defineFlow(
         endpoint = 'https://api.cohere.com/v1/chat';
         headers['Authorization'] = `Bearer ${input.apiKey}`;
         body = {
-          message: input.query,
-          model: 'command-r',
-          stream: false,
+          model: 'command-r-plus',
+          messages: [
+            { "role": "user", "content": input.query }
+          ],
         };
         break;
       default:
@@ -189,7 +190,7 @@ const chatFlow = ai.defineFlow(
             response = rawResponse.message?.content || 'No response from Ollama';
             break;
           case 'Cohere':
-            response = rawResponse.text || `No response from ${finalTool}`;
+            response = rawResponse.choices[0]?.message?.content || rawResponse.text || `No response from ${finalTool}`;
             break;
         }
       } catch (error) {
